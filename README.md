@@ -1,0 +1,1 @@
+# adpy-team-diplom
