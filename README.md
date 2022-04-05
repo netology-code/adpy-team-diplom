@@ -40,6 +40,7 @@
 1. [Python](https://www.python.org/) + IDE([Pycharm](https://www.jetbrains.com/ru-ru/pycharm/download))
 2. [Git](https://git-scm.com/) + [Github](https://github.com/)
 3. [Postgre](https://www.postgresql.org/) + [PgAdmin](https://www.pgadmin.org/)
+4. [ВКонтакте](https://vk.com/)
 
 ------
 
