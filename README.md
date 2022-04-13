@@ -95,7 +95,7 @@
   
    ### Роадмап:
   
-  ![image](https://user-images.githubusercontent.com/53707586/161832746-1c6c42d0-4d64-4d1d-9b05-47b80a3f4a25.png)
+  ![image](https://github.com/netology-code/adpy-team-diplom/blob/main/%D0%94%D0%BB%D1%8F%20%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%B0_3%20%D1%87%D0%B5%D0%BB.png)
   
   ### 1 этап:
 1. Участник А. Создайте общий репозиторий на github. Для предоставления доступа другим участникам необходимо зайти в `Settings` репозитория проекта, найти раздел `Collaborators`, кликнуть по кнопке `Add people`, добавить ник напарника и выбрать роль `Admin`.
