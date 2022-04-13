@@ -70,7 +70,7 @@
 
   ### Роадмап:
   
-  ![image](https://user-images.githubusercontent.com/53707586/161832746-1c6c42d0-4d64-4d1d-9b05-47b80a3f4a25.png)
+  ![image](https://drive.google.com/file/d/1V78Q7bE_GZ8y29vYlgNF6w15qx6D-zTt/view?usp=sharing)
   
 ### 1 этап:
 1. Участник А. Создайте общий репозиторий на github. Для предоставления доступа другим участникам необходимо зайти в `Settings` репозитория проекта, найти раздел `Collaborators`, кликнуть по кнопке `Add people`, добавить ник напарника и выбрать роль `Admin`.
