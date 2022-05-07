@@ -25,7 +25,7 @@ access_token = ''
 user_data = ''
 # присутствует временно
 # удалить сразу после функций записи/чтения токена из бд
-tmp_token = '61255e4bfa771fff688109f5422812c7791a03ab8046a195c23add5a30f87042c168c7bdbfdfe5677f8ab'
+tmp_token = ''
 # ---
 #
 while True:
