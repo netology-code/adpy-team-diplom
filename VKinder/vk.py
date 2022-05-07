@@ -23,17 +23,26 @@ def get_ip():
     return ip
 
 
-def initialize_vk_client():
-    group_token = '0958750174482253c31483e132a96c88aa890529dfe797f60e04beb97f8522441c78629e31f280bcd644c'
-    return vk_api.VkApi(token=group_token)
+def initialize_vk_client(token=''):
+    if not token:
+        # group_token
+        token = '0958750174482253c31483e132a96c88aa890529dfe797f60e04beb97f8522441c78629e31f280bcd644c'
+    return vk_api.VkApi(token=token)
 
 
 def get_longpoll_from_vk(vk):
     return VkLongPoll(vk)
 
 
-def write_msg(vk, user_id, message):
-    vk.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': randrange(10 ** 7)})
+def write_msg(vk, user_id, message, additional_parameters=''):
+    main_headers = {
+        'user_id': user_id,
+        'message': message,
+        'random_id': randrange(10 ** 7),
+    }
+
+    vk.method('messages.send',
+              dict(main_headers.items() + additional_parameters.items()) if additional_parameters else main_headers)
 
 
 def calc_user_age(bdate):
@@ -55,9 +64,8 @@ def get_user_data(vk, user_id):
     return info
 
 
-def select_age(info):
-    age = info[2]
-    if info[0] == 1:
+def select_age(age, gender):
+    if gender == 'W':
         age_from = age
         age_to = age + 3
     else:
@@ -67,11 +75,11 @@ def select_age(info):
 
 
 def search_people(vk, info):
-    age_from_to = select_age(info)
+    age_from_to = select_age(info['age'], info['gender'])
     res = vk.method('users.search', {
-        'hometown': info.city,
-        # 1 = mens, 2 = women
-        'sex': 1 if info.gender == 'M' else 2,
+        'hometown': info['city'],
+        # 2 = mens, 1 = women
+        'sex': 1 if info['gender'] == 'M' else 2,
         'age_from': age_from_to[0],
         'age_to': age_from_to[1]
     })
@@ -80,3 +88,7 @@ def search_people(vk, info):
 
 def is_event_equal_new_message(event_type):
     return event_type == VkEventType.MESSAGE_NEW
+
+
+def change_token(vk, new_token):
+    vk = vk_api.VkApi(token=new_token)
