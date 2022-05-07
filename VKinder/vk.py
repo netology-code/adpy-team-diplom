@@ -65,6 +65,8 @@ def get_user_data(vk, user_id):
 
 
 def select_age(age, gender):
+    # парням помоложе
+    # девушкам постарше
     if gender == 'W':
         age_from = age
         age_to = age + 3
@@ -77,7 +79,7 @@ def select_age(age, gender):
 def search_people(vk, info):
     age_from_to = select_age(info['age'], info['gender'])
     res = vk.method('users.search', {
-        'hometown': info['city'],
+        'city': info['city']['id'],
         # 2 = mens, 1 = women
         'sex': 1 if info['gender'] == 'M' else 2,
         'age_from': age_from_to[0],
