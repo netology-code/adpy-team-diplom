@@ -4,6 +4,7 @@ import time
 import requests
 from flask import Flask, request
 import vk_api
+from vk_api.keyboard import VkKeyboardColor, VkKeyboard
 from vk_api.longpoll import VkLongPoll, VkEventType
 import socket
 from threading import Thread
@@ -42,7 +43,7 @@ def write_msg(vk, user_id, message, additional_parameters=''):
     }
 
     vk.method('messages.send',
-              dict(main_headers.items() + additional_parameters.items()) if additional_parameters else main_headers)
+              main_headers | additional_parameters if additional_parameters else main_headers)
 
 
 def calc_user_age(bdate):
@@ -61,6 +62,8 @@ def get_user_data(vk, user_id):
     info['city'] = res[0]['city']
     info['age'] = calc_user_age(res[0]['bdate'])
     info['id'] = user_id
+    # прикрутить статус (в поиске или че там)
+    # хотя в задаче нечего не говорится про статус, поэтому оставляю на будущее
     return info
 
 
@@ -83,7 +86,9 @@ def search_people(vk, info):
         # 2 = mens, 1 = women
         'sex': 1 if info['gender'] == 'M' else 2,
         'age_from': age_from_to[0],
-        'age_to': age_from_to[1]
+        'age_to': age_from_to[1],
+        # прикрутить статус (в поиске или че там)
+        # хотя в задаче нечего не говорится про статус, поэтому оставляю на будущее
     })
     return res
 
@@ -94,3 +99,33 @@ def is_event_equal_new_message(event_type):
 
 def change_token(vk, new_token):
     vk = vk_api.VkApi(token=new_token)
+
+
+def make_message_about_another_user(user_to_show, vk_client, id_of_current_user):
+    return f"{user_to_show['first_name']} {user_to_show['last_name']}\n" \
+           f"https://vk.com/id{user_to_show['id']}"
+
+
+def find_photos(user_id, vk_client):
+    try:
+        photos = vk_client.method('photos.get', {'owner_id': user_id, 'extended': '1', 'album_id': 'profile'})
+        max_count = 3
+        curr_photo_num = 0
+        returning_value = ''
+        for photo in photos['items']:
+            curr_photo_num += 1
+            if curr_photo_num > max_count:
+                break
+            returning_value += f'photo{photo["owner_id"]}_{photo["id"]},'
+    except Exception as ex:
+        return f"<can't get photos, error: {ex}>"
+
+    return returning_value
+
+
+def create_basic_keyboard():
+    settings = dict(one_time=True, inline=False)
+    keyboard = VkKeyboard(**settings)
+    keyboard.add_callback_button(label='TEST',
+                                 color=VkKeyboardColor.PRIMARY, payload={"type": "my_own_100500_type_edit"})
+    return keyboard
