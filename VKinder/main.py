@@ -30,7 +30,7 @@ tmp_token = '61255e4bfa771fff688109f5422812c7791a03ab8046a195c23add5a30f87042c16
 #
 
 # cтандартные кнопки для сообщения
-kb = vk.create_basic_keyboard()
+kb_candidate_commands = vk.create_basic_keyboard()
 
 help_message = 'Напишите команду "ищи людей" для начала поиска "кандидатов"'
 
@@ -106,7 +106,7 @@ while True:
                         vk.write_msg(vk_client, event.user_id, message,
                                      {
                                          'attachment': str_attachments,
-                                         'keyboard': kb.get_keyboard()
+                                         'keyboard': kb_candidate_commands.get_keyboard()
                                      })
                         # сейчас вывожу просто первого юзера чисто разработать механизм
                         # TODO: придумать алгоритм вывода "кандидатов"
