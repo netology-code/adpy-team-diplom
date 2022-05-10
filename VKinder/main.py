@@ -1,10 +1,6 @@
 from db import add_to_favorites, add_new_user, user_authorized, get_user_info, display_favorites, add_partner_list_to_db
 from vk import get_partner_list_from_vk
 
-def show_next_partner(partner):
-    for item in partner:
-        print(item)
-
 def main():
 
     token = input('Enter token to use the app: ')
@@ -23,14 +19,16 @@ def main():
             print('Access denied')
             # надо как-то закончить выполнение программы
 
-    # получить данные пользователя из БД в виде словаря {'age': age, 'gender': gender, 'city': city}
+    # получить данные пользователя из БД в виде словаря {'user_id': user_id, 'age': age, 'gender': gender, 'city': city}
     user_info = get_user_info(user_id)
     # получить список партнеров из ВК (список списков)
     partner_list = get_partner_list_from_vk(user_info)
     # добавить список партнеров в БД
-    add_partner_list_to_db(user_info)
+    add_partner_list_to_db(partner_list)
+    # достать список из БД
+    partner_list = get_partner_list_from_db()
 
-    # ПЕРЕБОР ПО partner_list
+    # по партнерам из БД
     for partner in partner_list:
         # вывести в консоль доступные команды для управления ботом
         while True:
@@ -38,9 +36,10 @@ def main():
             user_cmd = input('Enter command: ')
             if user_cmd == 'n':
                 # вывести в консоль информацию из БД о первом/следующем потенциальном партнере
-                show_next_partner(partner)
+                for item in partner:
+                    print(item)
             elif user_cmd == 'a':
-                add_to_favorites(partner_id, user_id)
+                add_to_favorites(partner[0], user_id)
             elif user_cmd == 'd':
                 display_favorites(user_id)
             else:
