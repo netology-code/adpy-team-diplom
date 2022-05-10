@@ -25,7 +25,7 @@ access_token = ''
 user_data = ''
 # присутствует временно
 # удалить сразу после функций записи/чтения токена из бд
-tmp_token = '61255e4bfa771fff688109f5422812c7791a03ab8046a195c23add5a30f87042c168c7bdbfdfe5677f8ab'
+tmp_token = ''
 # ---
 #
 
@@ -33,6 +33,7 @@ tmp_token = '61255e4bfa771fff688109f5422812c7791a03ab8046a195c23add5a30f87042c16
 kb_candidate_commands = vk.create_basic_keyboard()
 
 help_message = 'Напишите команду "ищи людей" для начала поиска "кандидатов"'
+
 
 def token_existed(user_data):
     # TODO Sergey: сделать проверку (вероятнее всего тут нужно обращаться в бд,
@@ -46,7 +47,6 @@ def show_authorization_message(vk_cl, user_id):
                  f"https://oauth.vk.com/authorize?client_id={APP_ID}&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=groups,offline&response_type=token&v=5.52\n"
                  f"После получения токена отправь его мне (лучше полную ссылку в браузерной строке)"
                  )
-
 
 
 while True:
