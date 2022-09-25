@@ -1,19 +1,6 @@
 import psycopg2
 #pip install psycopg2
-
-class VKUser:
-    url = ''
-    photos_dict = {}
-    relation = ''
-    favourites_list = []
-
-    def __init__(self, id, name, surname, bdate, gender, city):
-        self.id = id
-        self.name = name
-        self.surname = surname
-        self.bdate = bdate
-        self.gender = gender
-        self.city = city
+from VKUser import VKUser
 
 class DBObject:
     def __init__(self, database, user, password):
@@ -48,7 +35,7 @@ class DBObject:
                 CREATE TABLE IF NOT EXISTS public.UserFoto(
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES public.User(id),
-                foto_link VARCHAR(200) NOT NULL UNIQUE,
+                foto_link VARCHAR(10000) NOT NULL UNIQUE,
                 likes INTEGER NOT NULL
                 );
                 """)
@@ -80,17 +67,26 @@ class DBObject:
                 conn.commit()
         conn.close()
 
+    def add_user(self, own_id, name, surname, b_date, gender, city, profile_link):
+        with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                INSERT INTO public.User(id, name, surname, b_date, gender, city, profile_link) VALUES(%s, %s, %s, %s, %s, %s, %s);
+                """, (own_id, name, surname, b_date, gender, city, profile_link))
+                conn.commit()
+        conn.close()
+
     def add_possible_pair(self, own_id, vk_id, name, surname, b_date, gender, city, profile_link):
         with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                INSERT INTO public.User(id, name, surname, b_date, gender, city, profile_link) VALUES(%s, %s, %s);
+                INSERT INTO public.User(id, name, surname, b_date, gender, city, profile_link) VALUES(%s, %s, %s, %s, %s, %s, %s);
                 """, (vk_id, name, surname, b_date, gender, city, profile_link))
                 conn.commit()
 
             with conn.cursor() as cur:
                 cur.execute("""
-                INSERT INTO public.PossiblePair(user_id, pair_id) VALUES(%s, %s, %s);
+                INSERT INTO public.PossiblePair(user_id, pair_id) VALUES(%s, %s);
                 """, (own_id, vk_id))
                 conn.commit()
 
@@ -111,7 +107,7 @@ class DBObject:
         with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                INSERT INTO public.UserFavouritList(user_id, favourite_id) VALUES(%s, %s, %s);
+                INSERT INTO public.UserFavouritList(user_id, favourite_id) VALUES(%s, %s);
                 """, (own_id, vk_id))
             conn.commit()
         conn.close()
@@ -120,7 +116,7 @@ class DBObject:
         with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                INSERT INTO public.UserBlackList(user_id, blocked_id) VALUES(%s, %s, %s);
+                INSERT INTO public.UserBlackList(user_id, blocked_id) VALUES(%s, %s);
                 """, (own_id, vk_id))
             conn.commit()
         conn.close()
@@ -162,7 +158,9 @@ class DBObject:
 
     #viewed_user_ids лист с id уже просмотренных пользователей. Первый пользователь показывается автоматически и его id надо занести в список, как просмотренный
     #если БД не дает больше результатов поиска, после нажатия кнопки next и обращения к БД, то надо снова сделать users.search
-    def select_next_user(self, own_id, viewed_user_ids = []):
+    def select_next_users_old(self, own_id, viewed_user_ids = []):
+        tpl_viewed_user_ids = tuple(viewed_user_ids)
+        next_ids_db = []
         with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
             with conn.cursor() as cur:
                  cur.execute("""
@@ -175,7 +173,7 @@ class DBObject:
 
         if not next_ids_db:
             #если при вызове функции нет информации в БД, то необходима загрузка новых пользователей
-            return 1
+            return []
         else:
             next_ids = [elem[0] for elem in next_ids_db]
             print(next_ids)
@@ -192,6 +190,54 @@ class DBObject:
                          SELECT * FROM public.User
                          WHERE id = %s;
                          """, (id,))
+                        user_infos = cur.fetchall()
+                    conn.commit()
+                conn.close()
+                print(user_infos)
+                if len(user_infos) > 0:
+                    entry = user_infos[0]
+                    user_info = VKUser(int(entry[0]), entry[1], entry[2], entry[3], entry[4], entry[5])
+                    user_info.url = entry[6]
+                    photos_dict = self.get_user_photos(id)
+                    user_info.photos_dict = photos_dict
+                    user_info_list.append(user_info)
+
+        return user_info_list
+
+
+    def select_next_users(self, own_id, viewed_user_ids = []):
+        tpl_viewed_user_ids = tuple(viewed_user_ids) if len(tuple(viewed_user_ids)) > 0 else ('')
+
+        next_ids_db = []
+        with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
+            with conn.cursor() as cur:
+                 cur.execute("""
+                 SELECT pair_id FROM public.PossiblePair
+                 WHERE user_id = %s;
+                 """, (own_id,))
+                 next_ids_db = cur.fetchall()
+            conn.commit()
+        conn.close()
+
+        if len(next_ids_db) == 0:
+            #если при вызове функции нет информации в БД, то необходима загрузка новых пользователей
+            return []
+        else:
+            next_ids = [elem[0] for elem in next_ids_db]
+            print(next_ids)
+
+        user_info_list = []
+
+        #проход в цикле по каждому id возможной пары
+        for id in next_ids:
+            #если id не находится в уже просмотренных и не в черном списке, то загрузи информацию о пользователе и его фото из БД
+            if id not in viewed_user_ids and not self.check_if_in_blacklist(own_id, id):
+                with psycopg2.connect(database=self.database, user=self.user, password=self.password) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                         SELECT * FROM public.User
+                         WHERE id = %s;
+                         """, (id, ))
                         user_infos = cur.fetchall()
                     conn.commit()
                 conn.close()

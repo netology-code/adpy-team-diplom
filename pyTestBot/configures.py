@@ -3,3 +3,6 @@ bot_token = 'vk1.a.pQaiq_hNnQyeqrG8KuLMvHUcoIfIRbIebzT9eBjc2eYh5h_v8DAORV2nXZ9pP
 token_vk = 'vk1.a.nlzo_um8xcGl2odLpflH7ulgshfCfKML5H9ZnaZ_FY0iNgdVG5ZpQSG19jH-6l1qomOuUtB2DKrL648QPeZvQJTk1Fcrgma53r0Ca2KjdWCIEEtWZXzN10x9mx2kohYU_VINd1NGOJ9F7IJ_78NQLWDZtmzgi1KEHaz3A1dzC-GVDMngZb-3RUDMPopfdEcq'
 
 # подставь свои токены от вк и группы бота
+database = 'vkinder'
+user = 'postgres'
+password = '1234'

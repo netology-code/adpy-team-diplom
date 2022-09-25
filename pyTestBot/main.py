@@ -1,61 +1,154 @@
-from random import randrange
+import re
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor, VkKeyboardButton
-from vkuser import VkDownload
-
-import requests
-
-# class VK:
-#
-#    def __init__(self, access_token, user_id, version='5.131'):
-#        self.token = access_token
-#        self.id = user_id
-#        self.version = version
-#        self.params = {'access_token': self.token, 'v': self.version}
-#
-#    def users_info(self):
-#        url = 'https://api.vk.com/method/users.get'
-#        params = {'user_ids': self.id}
-#        response = requests.get(url, params={**self.params, **params})
-#        return response.json()
-
-user_id = '636054'
-# vk = VK(access_token, user_id)
-# print(vk.users_info())
-
-#token = input('Token: ')
-# token = 'vk1.a.pQaiq_hNnQyeqrG8KuLMvHUcoIfIRbIebzT9eBjc2eYh5h_v8DAORV2nXZ9pPhXBK0ZjxzDUOxj7SuG-6vOs5rPIswsVBTvlsFoydu6WvY_QBgm1gtQNlHtRvIGTjwUwnp914lh5u3GlWJo5iFLFr20Ks0qfyh8vDBF9j3-3ltrXHl2S88IbrQtPD-b_bddK'
-# vk = vk_api.VkApi(token=token)
-# longpoll = VkLongPoll(vk)
-# keyboard = VkKeyboard()
-# keyboard.add_button('next', VkKeyboardColor.PRIMARY)
-# keyboard.add_button('favourites', VkKeyboardColor.POSITIVE)
-# keyboard.add_button('blacklist', VkKeyboardColor.NEGATIVE)
-# keyboard.add_button('lala', VkKeyboardColor.SECONDARY)
-#
-#
-# def write_msg(user_id, message):
-#     vk.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': randrange(10 ** 7), 'keyboard': keyboard.get_keyboard()})
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+from configures import bot_token
+from configures import database
+from configures import password
+from configures import user
+from vk_users import get_user_info, search_possible_pair, get_photos
+from db_manager import DBObject
 
 
-# for event in longpoll.listen():
-#     if event.type == VkEventType.MESSAGE_NEW:
-#         if event.to_me:
-#             request = event.text
-#             print(f'request: {request}')
-#             if request == "привет":
-#                 print('привет')
-#                 write_msg(event.user_id, f"Хай, {event.user_id}")
-#             elif request == "пока":
-#                 print('пока')
-#                 write_msg(event.user_id, "Пока((")
-#             else:
-#                 print('не понял')
-#                 print(f'{event.user_id}')
-#                 write_msg(event.user_id, "Не поняла вашего ответа...")
+session = vk_api.VkApi(token=bot_token)
 
-if __name__ == '__main__':
-    vkd = VkDownload()
-    user = vkd.get_user_info(user_id)
-    vkd.find_possible_pairs(user)
+db_obj = DBObject(database, user, password)
+db_obj.create_user_db()
+users_to_be_shown = []
+
+
+
+def send_message(user_id, message, keyboard=None):
+    post = {
+        'user_id': user_id,
+        'message': message,
+        'random_id': 0
+    }
+
+    if keyboard is not None:
+        post['keyboard'] = keyboard.get_keyboard()
+
+    session.method('messages.send', post)
+
+
+def check_str(pattern, user_str):
+    res = re.match(pattern, user_str)
+    return res is not None
+
+
+def search_params(new_str):
+    params = new_str.split(' ')
+    if params[0] == 'женский':
+        params[0] = 1
+    elif params[0] == 'мужской':
+        params[0] = 2
+    return params
+
+def show_one_user(user_id, users_to_be_shown):
+    if len(users_to_be_shown) > 0:
+        actual_user = users_to_be_shown.pop(0)
+        send_message(user_id, f'{actual_user.name} {actual_user.surname} {actual_user.url}')
+
+        if len(actual_user.photos_dict) > 0:
+            for photo_link, photo_like in actual_user.photos_dict.items():
+                send_message(user_id, f'{str(photo_link)}')
+        else:
+            send_message(user_id, f'Closed profile. No photos available ')
+        print(f'users left: {users_to_be_shown}')
+        print(f'su actual: {actual_user}')
+        return actual_user
+    else:
+        #request_new_users()
+        print('request new users')
+
+
+for event in VkLongPoll(session).listen():
+    if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+        text = event.text.lower()
+        user_id = event.user_id
+
+        # поиск информации пользователя бота
+        user_info = get_user_info(user_id)
+
+        keyboard = VkKeyboard(one_time=False)
+        buttons = ['next', 'save', 'block', 'write']
+        buttons_colors = [VkKeyboardColor.SECONDARY, VkKeyboardColor.POSITIVE,
+                          VkKeyboardColor.NEGATIVE, VkKeyboardColor.PRIMARY]
+        for btn, btn_color in zip(buttons, buttons_colors):
+            keyboard.add_button(btn, btn_color)
+
+        if text == 'привет':
+            send_message(user_id, 'Привет, для поиска пары введи: пол, возраст от и до, город', keyboard)
+            send_message(user_id, 'Например: женский 25-30 Москва', keyboard)
+
+
+            db_obj.add_user(user_info.id, user_info.name, user_info.surname, user_info.bdate,
+                            user_info.gender, user_info.city, user_info.url)
+
+            users_to_be_shown = []
+        if check_str(r'[Аа-яЯ]{7}\s\d{2}-\d{2}\s[Аа-яЯ]+', text):
+            new_params = search_params(text)
+            peoples = search_possible_pair(new_params[0], new_params[1][:2],
+                                           new_params[1][3:], new_params[2])
+
+            first_photos = {}
+
+            send_message(user_id, 'Подождите, идет загрузка результатов ...')
+
+            for item in peoples:
+                # id_user = int(item[-1])
+                # photos_user = get_photos(id_user)
+                # send_message(user_id, f'{str(item[0])} {item[1]} {item[2]}')
+
+                id_user = int(item.id)
+
+                db_obj.add_possible_pair(user_id, id_user, item.name, item.surname, item.bdate, item.gender, item.city, item.url)
+
+                photos_user = get_photos(id_user)
+
+                if len(photos_user) > 0:
+                    db_obj.add_user_photos(id_user, photos_user)
+
+            users_to_be_shown = db_obj.select_next_users(user_id)
+            print(f' from select: {users_to_be_shown}')
+            print(f' from select: {users_to_be_shown[0].photos_dict}')
+            show_one_user(user_id, users_to_be_shown)
+
+            #     if len(first_photos) == 0:
+            #         for photo_link, photo_like in photos_user.items():
+            #             first_photos[photo_link] = photo_like
+            #             send_message(user_id, f'{str(photo_link)}')
+            #
+            # if len(peoples) > 0:
+            #     item = peoples[0]
+            #     send_message(user_id, f'{item.name} {item.surname} {item.url}')
+            #
+            #     user_info.already_viewed.append(item.id)
+            #
+            #     for photo_link, photo_like in first_photos.items():
+            #
+            #         first_photos[photo_link] = photo_like
+            #         send_message(user_id, f'{str(photo_link)}')
+
+
+
+                # for photo_link, photo_like in photos_user.items():
+                #
+                #     send_message(user_id, f'{str(photo_link)}')
+
+        elif text == 'next':
+            print(f'next knopka: {users_to_be_shown}')
+            show_one_user(user_id, users_to_be_shown)
+
+
+#виджет ожидания, пока не загрузятся фото
+#в фавориты в БД
+#в черный список в БД
+
+#запрос на следующих пользователей, старотовать с начала? как соотнести с БД
+#убрать принты и возможные ошибки
+
+
+
+
+# bot работает, все присылает, но вылетает исключение если профиль закрыт, добавлю try exept но уже завтра

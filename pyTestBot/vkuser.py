@@ -41,7 +41,6 @@ class VkDownload:
         user_json = request.json()['response'][0]
         #print(user_json)
 
-
         return VKUser(user_json['id'], user_json['first_name'], user_json['last_name'], user_json['bdate'], user_json['sex'], user_json['city'])
 
     #поиск возможной пары
@@ -77,13 +76,6 @@ class VkDownload:
                        vk_user = VKUser(u_id, u_first_name, u_last_name, u_bdate, u_gender, u_city)
                        # добавить в БД
 
-                       # print(u_id)
-                       # print(u_first_name)
-                       # print(u_last_name)
-                       # print(u_bdate)
-                       # print(u_gender)
-                       # print(u_city)
-
                        fotos = self.download_fotos_vk(u_id)
                        vk_user.fotos_dict = fotos
                        list_to_db.append(vk_user)
@@ -96,6 +88,7 @@ class VkDownload:
 
 
     def find_possible_pairs(self, user:VKUser):
+        #использовать users.search
         url = f"{self.URL}users.get"
         #поиск пользователей по id, возможно есть другие варианты?
         step = 5
