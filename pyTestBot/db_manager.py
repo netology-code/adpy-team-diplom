@@ -11,15 +11,15 @@ class DBObject:
     @staticmethod
     def create_user_db(cur):
         cur.execute("""
-            DROP TABLE IF EXISTS public.UserFavouriteList;
-            DROP TABLE IF EXISTS public.UserFoto;
-            DROP TABLE IF EXISTS public.UserBlackList;
-            DROP TABLE IF EXISTS public.PossiblePair;
-            DROP TABLE IF EXISTS public.User;
+            DROP TABLE IF EXISTS user_favorite_list;
+            DROP TABLE IF EXISTS user_photo;
+            DROP TABLE IF EXISTS user_black_list;
+            DROP TABLE IF EXISTS possible_pair;
+            DROP TABLE IF EXISTS user_vk;
         """)
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS public.User(
+            CREATE TABLE IF NOT EXISTS user_vk(
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(40) NOT NULL,
                 surname VARCHAR(40) NOT NULL,
@@ -31,54 +31,54 @@ class DBObject:
          """)
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS public.UserFoto(
+            CREATE TABLE IF NOT EXISTS user_photo(
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES public.User(id),
+                user_id INTEGER NOT NULL REFERENCES user_vk(id),
                 foto_link VARCHAR(10000) NOT NULL UNIQUE,
                 likes INTEGER NOT NULL
             );
         """)
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS public.PossiblePair(
+            CREATE TABLE IF NOT EXISTS possible_pair(
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES public.User(id),
-                pair_id INTEGER NOT NULL REFERENCES public.User(id)
+                user_id INTEGER NOT NULL REFERENCES user_vk(id),
+                pair_id INTEGER NOT NULL REFERENCES user_vk(id)
             );                
         """)
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS public.UserFavouriteList(
+            CREATE TABLE IF NOT EXISTS user_favorite_list(
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES public.User(id),
-                favourite_id INTEGER NOT NULL REFERENCES public.User(id)
+                user_id INTEGER NOT NULL REFERENCES user_vk(id),
+                favourite_id INTEGER NOT NULL REFERENCES user_vk(id)
             );               
         """)
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS public.UserBlackList(
+            CREATE TABLE IF NOT EXISTS user_black_list(
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES public.User(id),
-                blocked_id INTEGER NOT NULL REFERENCES public.User(id)
+                user_id INTEGER NOT NULL REFERENCES user_vk(id),
+                blocked_id INTEGER NOT NULL REFERENCES user_vk(id)
             );
         """)
 
     @staticmethod
     def add_user(cur, own_id, name, surname, b_date, gender, city, profile_link):
         cur.execute("""
-            INSERT INTO public.User(id, name, surname, b_date, gender, city, profile_link) 
+            INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
             VALUES(%s, %s, %s, %s, %s, %s, %s);
         """, (own_id, name, surname, b_date, gender, city, profile_link))
 
     @staticmethod
     def add_possible_pair(cur, own_id, vk_id, name, surname, b_date, gender, city, profile_link):
         cur.execute("""
-            INSERT INTO public.User(id, name, surname, b_date, gender, city, profile_link) 
+            INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
             VALUES(%s, %s, %s, %s, %s, %s, %s);
         """, (vk_id, name, surname, b_date, gender, city, profile_link))
 
         cur.execute("""
-            INSERT INTO public.PossiblePair(user_id, pair_id) VALUES(%s, %s);
+            INSERT INTO possible_pair(user_id, pair_id) VALUES(%s, %s);
         """, (own_id, vk_id))
 
     @staticmethod
@@ -86,25 +86,25 @@ class DBObject:
         # проверить правильность добавления!!
         for link, likes in photo_dict.items():
             cur.execute("""
-                INSERT INTO public.UserFoto(user_id, foto_link, likes) VALUES(%s, %s, %s);
+                INSERT INTO user_photo(user_id, foto_link, likes) VALUES(%s, %s, %s);
             """, (vk_id, link, likes))
 
     @staticmethod
     def add_user_to_favourites(cur, own_id, vk_id):
         cur.execute("""
-            INSERT INTO public.UserFavouritList(user_id, favourite_id) VALUES(%s, %s);
+            INSERT INTO user_favorite_list(user_id, favourite_id) VALUES(%s, %s);
         """, (own_id, vk_id))
 
     @staticmethod
     def add_user_to_blacklist(cur, own_id, vk_id):
         cur.execute("""
-            INSERT INTO public.UserBlackList(user_id, blocked_id) VALUES(%s, %s);
+            INSERT INTO user_black_list(user_id, blocked_id) VALUES(%s, %s);
         """, (own_id, vk_id))
 
     @staticmethod
     def check_if_in_blacklist(cur, own_id, id):
         cur.execute("""
-            SELECT blocked_id FROM public.UserBlacklist
+            SELECT blocked_id FROM user_black_list
             WHERE user_id = %s;
         """, (own_id,))
 
@@ -119,7 +119,7 @@ class DBObject:
     @staticmethod
     def get_user_photos(cur, id):
         cur.execute("""
-            SELECT foto_link, likes FROM public.UserFoto
+            SELECT foto_link, likes FROM user_photo
             WHERE user_id = %s;
         """, (id,))
 
@@ -139,7 +139,7 @@ class DBObject:
         next_ids_db = []
 
         cur.execute("""
-            SELECT pair_id FROM public.PossiblePair
+            SELECT pair_id FROM possible_pair
             WHERE user_id = %s;
         """, (own_id,))
 
@@ -158,7 +158,7 @@ class DBObject:
         for id in next_users:
             if id not in viewed_user_ids and not self.check_if_in_blacklist(cur, own_id, id):
                 cur.execute("""
-                    SELECT * FROM public.User
+                    SELECT * FROM user_vk
                     WHERE id = %s;
                 """, (id, ))
 
