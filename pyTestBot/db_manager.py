@@ -5,13 +5,15 @@ from configures import database, user, password
 
 
 class DBObject:
+    cur = None
+    conn = None
+
     def __init__(self, database, user, password):
         self.database = database
         self.user = user
         self.password = password
 
-    @staticmethod
-    def create_user_db(cur):
+    def create_user_db(self, cur):
         cur.execute("""
             DROP TABLE IF EXISTS user_favorite_list;
             DROP TABLE IF EXISTS user_photo;
@@ -19,6 +21,7 @@ class DBObject:
             DROP TABLE IF EXISTS possible_pair;
             DROP TABLE IF EXISTS user_vk;
         """)
+
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS user_vk(
@@ -65,15 +68,13 @@ class DBObject:
             );
         """)
 
-    @staticmethod
-    def add_user(cur, own_id, name, surname, b_date, gender, city, profile_link):
+    def add_user(self, cur, own_id, name, surname, b_date, gender, city, profile_link):
         cur.execute("""
             INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
             VALUES(%s, %s, %s, %s, %s, %s, %s);
         """, (own_id, name, surname, b_date, gender, city, profile_link))
 
-    @staticmethod
-    def add_possible_pair(cur, own_id, vk_id, name, surname, b_date, gender, city, profile_link):
+    def add_possible_pair(self, cur, own_id, vk_id, name, surname, b_date, gender, city, profile_link):
         cur.execute("""
             INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
             VALUES(%s, %s, %s, %s, %s, %s, %s);
@@ -83,28 +84,24 @@ class DBObject:
             INSERT INTO possible_pair(user_id, pair_id) VALUES(%s, %s);
         """, (own_id, vk_id))
 
-    @staticmethod
-    def add_user_photos(cur, vk_id, photo_dict: dict):
+    def add_user_photos(self, cur, vk_id, photo_dict: dict):
         # проверить правильность добавления!!
         for link, likes in photo_dict.items():
             cur.execute("""
                 INSERT INTO user_photo(user_id, foto_link, likes) VALUES(%s, %s, %s);
             """, (vk_id, link, likes))
 
-    @staticmethod
-    def add_user_to_favourites(cur, own_id, vk_id):
+    def add_user_to_favourites(self, cur, own_id, vk_id):
         cur.execute("""
             INSERT INTO user_favorite_list(user_id, favourite_id) VALUES(%s, %s);
         """, (own_id, vk_id))
 
-    @staticmethod
-    def add_user_to_blacklist(cur, own_id, vk_id):
+    def add_user_to_blacklist(self, cur, own_id, vk_id):
         cur.execute("""
             INSERT INTO user_black_list(user_id, blocked_id) VALUES(%s, %s);
         """, (own_id, vk_id))
 
-    @staticmethod
-    def check_if_in_blacklist(cur, own_id, id):
+    def check_if_in_blacklist(self, cur, own_id, id):
         cur.execute("""
             SELECT blocked_id FROM user_black_list
             WHERE user_id = %s;
@@ -118,8 +115,7 @@ class DBObject:
                 return True
         return False
 
-    @staticmethod
-    def get_user_photos(cur, id):
+    def get_user_photos(self, cur, id):
         cur.execute("""
             SELECT foto_link, likes FROM user_photo
             WHERE user_id = %s;
@@ -134,8 +130,7 @@ class DBObject:
                 photos_likes_dict[photo[0]] = photo[1]
         return photos_likes_dict
 
-    @staticmethod
-    def select_next_users(cur, own_id):
+    def select_next_users(self, cur, own_id):
         cur.execute("""
             SELECT pair_id FROM possible_pair
             WHERE user_id = %s;
@@ -149,8 +144,7 @@ class DBObject:
             next_ids = [elem[0] for elem in next_ids_db]
             return next_ids
 
-    @staticmethod
-    def get_users_info(self, cur, own_id, viewed_user_ids):
+    def get_users_info(self, cur, own_id, viewed_user_ids=[]):
         next_users = self.select_next_users(cur, own_id)
         user_info_list = []
 
@@ -173,9 +167,18 @@ class DBObject:
 
         return user_info_list
 
+    def connect(self):
+        db_obj = DBObject(database, user, password)
+        with psycopg2.connect(database=db_obj.database, user=db_obj.user, password=db_obj.password) as conn:
+            with conn.cursor() as cur:
+                db_obj.create_user_db(cur)
+                self.cur = cur
+            self.conn = conn
+
 
 if __name__ == '__main__':
     db_obj = DBObject(database, user, password)
     with psycopg2.connect(database=db_obj.database, user=db_obj.user, password=db_obj.password) as conn:
         with conn.cursor() as cur:
             db_obj.create_user_db(cur)
+

@@ -7,12 +7,24 @@ from configures import database, user, password
 from vk_users import get_user_info, search_possible_pair, get_photos
 from db_manager import DBObject
 from VKUser import VKUser
+from db_connection import DBConnection
 
 
 session = vk_api.VkApi(token=bot_token)
 
+
+# db_obj = DBObject(database, user, password)
+# db_conn = DBConnection(db_obj)
+# cur = db_conn.open_connection()
+# db_obj.create_user_db(cur)
+# db_conn.commit_request()
+
+
 db_obj = DBObject(database, user, password)
-db_obj.create_user_db()
+#db_obj.create_user_db()
+db_obj.connect()
+
+
 users_to_be_shown = []
 user_shown = None
 
@@ -84,7 +96,7 @@ for event in VkLongPoll(session).listen():
             send_message(user_id, 'Например: женский 25-30 Москва', keyboard)
 
 
-            db_obj.add_user(user_info.id, user_info.name, user_info.surname, user_info.bdate,
+            db_obj.add_user(db_obj.cur, user_info.id, user_info.name, user_info.surname, user_info.bdate,
                             user_info.gender, user_info.city, user_info.url)
 
             users_to_be_shown = []
@@ -105,14 +117,14 @@ for event in VkLongPoll(session).listen():
 
                 id_user = int(item.id)
 
-                db_obj.add_possible_pair(user_id, id_user, item.name, item.surname, item.bdate, item.gender, item.city, item.url)
+                db_obj.add_possible_pair(db_obj.cur, user_id, id_user, item.name, item.surname, item.bdate, item.gender, item.city, item.url)
 
                 photos_user = get_photos(id_user)
 
                 if len(photos_user) > 0:
-                    db_obj.add_user_photos(id_user, photos_user)
+                    db_obj.add_user_photos(db_obj.cur, id_user, photos_user)
 
-            users_to_be_shown = db_obj.select_next_users(user_id)
+            users_to_be_shown = db_obj.select_next_users(db_obj.cur, user_id)
             print(f' from select: {users_to_be_shown}')
             print(f' from select: {users_to_be_shown[0].photos_dict}')
             user_shown = show_one_user(user_id, users_to_be_shown)
@@ -144,10 +156,10 @@ for event in VkLongPoll(session).listen():
             user_shown = show_one_user(user_id, users_to_be_shown)
 
         elif text == 'save' and user_shown:
-            db_obj.add_user_to_favourites(user_id, user_shown.id)
+            db_obj.add_user_to_favourites(db_obj.cur, user_id, user_shown.id)
 
         elif text == 'block' and user_shown:
-            db_obj.add_user_to_blacklist(user_id, user_shown.id)
+            db_obj.add_user_to_blacklist(db_obj.cur, user_id, user_shown.id)
         elif text == 'write' and user_shown:
             print('write')
             send_message(user_id, f'{user_shown.url}')
