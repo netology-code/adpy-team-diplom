@@ -1,5 +1,7 @@
 import psycopg2
 from VKUser import VKUser
+from configures import database, user, password
+
 
 
 class DBObject:
@@ -133,11 +135,7 @@ class DBObject:
         return photos_likes_dict
 
     @staticmethod
-    def select_next_users(cur, own_id, viewed_user_ids=[]):
-        tpl_viewed_user_ids = tuple(viewed_user_ids) if len(tuple(viewed_user_ids)) > 0 else ''
-
-        next_ids_db = []
-
+    def select_next_users(cur, own_id):
         cur.execute("""
             SELECT pair_id FROM possible_pair
             WHERE user_id = %s;
@@ -151,8 +149,9 @@ class DBObject:
             next_ids = [elem[0] for elem in next_ids_db]
             return next_ids
 
-    def get_users_info(self, cur):
-        next_users = self.select_next_users(cur, own_id, viewed_user_ids=[])
+    @staticmethod
+    def get_users_info(self, cur, own_id, viewed_user_ids):
+        next_users = self.select_next_users(cur, own_id)
         user_info_list = []
 
         for id in next_users:
@@ -176,7 +175,7 @@ class DBObject:
 
 
 if __name__ == '__main__':
-    db_obj = DBObject('vkinder', 'postgres', 'python123')
+    db_obj = DBObject(database, user, password)
     with psycopg2.connect(database=db_obj.database, user=db_obj.user, password=db_obj.password) as conn:
         with conn.cursor() as cur:
             db_obj.create_user_db(cur)

@@ -3,9 +3,7 @@ import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from configures import bot_token
-from configures import database
-from configures import password
-from configures import user
+from configures import database, user, password
 from vk_users import get_user_info, search_possible_pair, get_photos
 from db_manager import DBObject
 from VKUser import VKUser
