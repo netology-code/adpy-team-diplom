@@ -35,7 +35,7 @@ class DBObject:
                 CREATE TABLE IF NOT EXISTS public.UserFoto(
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES public.User(id),
-                foto_link VARCHAR(10000) NOT NULL UNIQUE,
+                foto_link VARCHAR(10000) NOT NULL,
                 likes INTEGER NOT NULL
                 );
                 """)

@@ -63,7 +63,8 @@ def get_photos(person_id):
 
     for item in range(len(response['items'])):
         users_photos.append([response['items'][item]['likes']['count'],
-                             response['items'][item]['sizes'][-1]['url']])
+                             response['items'][item]['id']])
+                            # response['items'][item]['sizes'][-1]['url']])
 
     photos = sorted(users_photos, key=lambda x: int(x[0]), reverse=True)
     photos_three = photos[:3] if len(photos) >= 3 else photos
@@ -71,10 +72,6 @@ def get_photos(person_id):
     for photo in photos_three:
         user_photos_dict[photo[1]] = photo[0]
     return user_photos_dict
-
-
-
-
 
 
     # print(get_user_info(636054))
