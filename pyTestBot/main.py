@@ -8,9 +8,12 @@ from configures import password
 from configures import user
 from vk_users import get_user_info, search_possible_pair, get_photos
 from db_manager import DBObject
+from vk_api import VkUpload
+
 
 
 session = vk_api.VkApi(token=bot_token)
+upload = VkUpload(session)
 
 db_obj = DBObject(database, user, password)
 db_obj.create_user_db()
@@ -31,6 +34,24 @@ def send_message(user_id, message, keyboard=None):
     session.method('messages.send', post)
 
 
+def send_attachments(user_id, attachment_list):
+    #vk = vk_api.VkApi(token=bot_token)
+    #response = vk.method('message.send', {'user_id': user_id, 'message': '', 'attachment': attachment_list})
+    # info = [response[0]['id'], response[0]['first_name'], response[0]['last_name'],
+    print(f'attchemnt-list: {attachment_list}')
+
+    post = {
+        'user_id': user_id,
+        'message': 'Фотографии:',
+        'attachment': attachment_list,
+        'random_id': 0
+    }
+
+    if keyboard is not None:
+        post['keyboard'] = keyboard.get_keyboard()
+
+    session.method('messages.send', post)
+
 def check_str(pattern, user_str):
     res = re.match(pattern, user_str)
     return res is not None
@@ -49,9 +70,16 @@ def show_one_user(user_id, users_to_be_shown):
         actual_user = users_to_be_shown.pop(0)
         send_message(user_id, f'{actual_user.name} {actual_user.surname} {actual_user.url}')
 
+        #<photo><user_id>_<photo_link>
+        attachments = ''
         if len(actual_user.photos_dict) > 0:
             for photo_link, photo_like in actual_user.photos_dict.items():
-                send_message(user_id, f'{str(photo_link)}')
+               # send_message(user_id, f'{str(photo_link)}')
+                attachments += f'photo{actual_user.id}_{photo_link},'
+            attachments = attachments[:-1]
+            send_attachments(user_id, attachments)
+           # send_message(user_id, f'"attachments": {attachments}')
+
         else:
             send_message(user_id, f'Closed profile. No photos available ')
         print(f'users left: {users_to_be_shown}')
