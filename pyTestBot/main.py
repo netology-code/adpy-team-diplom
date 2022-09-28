@@ -139,6 +139,7 @@ def search_pairs(new_params, user_id):
         return users_to_be_shown, user_shown
     else:
         send_message(user_id, 'Результатов не найдено')
+        return [], None
 
 
 for event in VkLongPoll(session).listen():
