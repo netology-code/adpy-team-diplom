@@ -71,8 +71,7 @@ def show_one_user(user_id, users_to_be_shown) -> None:
             send_attachments(user_id, attachments)
         else:
             send_message(user_id, f'Closed profile. No photos available ')
-        print(f'users left: {users_to_be_shown}')
-        print(f'su actual: {actual_user}')
+
         return actual_user
     else:
         print('request new users')
@@ -116,27 +115,30 @@ def show_black_list(conn, user_id):
     return black_list
 
 def search_pairs(new_params, user_id):
-    peoples = search_possible_pair(new_params[0], new_params[1][:2],
-                                   new_params[1][3:], new_params[2])
+    if new_params != '':
+        peoples = search_possible_pair(new_params[0], new_params[1][:2],
+                                       new_params[1][3:], new_params[2])
 
-    first_photos = {}
+        first_photos = {}
 
-    send_message(user_id, 'Подождите, идет загрузка результатов ...')
+        send_message(user_id, 'Подождите, идет загрузка результатов ...')
 
-    for item in peoples:
-        id_user = int(item.id)
+        for item in peoples:
+            id_user = int(item.id)
 
-        db_obj.add_possible_pair(db_obj.conn, user_id, id_user, item.name, item.surname, item.bdate, item.gender,
-                                 item.city, item.url)
+            db_obj.add_possible_pair(db_obj.conn, user_id, id_user, item.name, item.surname, item.bdate, item.gender,
+                                     item.city, item.url)
 
-        photos_user = get_photos(id_user)
+            photos_user = get_photos(id_user)
 
-        if len(photos_user) > 0:
-            db_obj.add_user_photos(db_obj.conn, id_user, photos_user)
+            if len(photos_user) > 0:
+                db_obj.add_user_photos(db_obj.conn, id_user, photos_user)
 
-    users_to_be_shown = db_obj.get_users_info(db_obj.conn, user_id)
-    user_shown = show_one_user(user_id, users_to_be_shown)
-    return users_to_be_shown, user_shown
+        users_to_be_shown = db_obj.get_users_info(db_obj.conn, user_id)
+        user_shown = show_one_user(user_id, users_to_be_shown)
+        return users_to_be_shown, user_shown
+    else:
+        send_message(user_id, 'Результатов не найдено')
 
 
 for event in VkLongPoll(session).listen():
