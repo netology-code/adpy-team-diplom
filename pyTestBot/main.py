@@ -3,23 +3,20 @@ import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from configures import bot_token
-from configures import database
-from configures import password
-from configures import user
+from configures import database, user, password
 from vk_users import get_user_info, search_possible_pair, get_photos
 from db_manager import DBObject
-from vk_api import VkUpload
-
+from VKUser import VKUser
 
 
 session = vk_api.VkApi(token=bot_token)
-upload = VkUpload(session)
 
 db_obj = DBObject(database, user, password)
-db_obj.create_user_db()
+db_obj.connect()
+conn = db_obj.conn
+
 users_to_be_shown = []
-
-
+user_shown = None
 
 def send_message(user_id, message, keyboard=None):
     post = {
@@ -35,11 +32,6 @@ def send_message(user_id, message, keyboard=None):
 
 
 def send_attachments(user_id, attachment_list):
-    #vk = vk_api.VkApi(token=bot_token)
-    #response = vk.method('message.send', {'user_id': user_id, 'message': '', 'attachment': attachment_list})
-    # info = [response[0]['id'], response[0]['first_name'], response[0]['last_name'],
-    print(f'attchemnt-list: {attachment_list}')
-
     post = {
         'user_id': user_id,
         'message': 'Фотографии:',
@@ -65,7 +57,8 @@ def search_params(new_str):
         params[0] = 2
     return params
 
-def show_one_user(user_id, users_to_be_shown):
+
+def show_one_user(user_id, users_to_be_shown) -> VKUser:
     if len(users_to_be_shown) > 0:
         actual_user = users_to_be_shown.pop(0)
         send_message(user_id, f'{actual_user.name} {actual_user.surname} {actual_user.url}')
@@ -74,20 +67,53 @@ def show_one_user(user_id, users_to_be_shown):
         attachments = ''
         if len(actual_user.photos_dict) > 0:
             for photo_link, photo_like in actual_user.photos_dict.items():
-               # send_message(user_id, f'{str(photo_link)}')
                 attachments += f'photo{actual_user.id}_{photo_link},'
             attachments = attachments[:-1]
             send_attachments(user_id, attachments)
-           # send_message(user_id, f'"attachments": {attachments}')
-
         else:
             send_message(user_id, f'Closed profile. No photos available ')
         print(f'users left: {users_to_be_shown}')
         print(f'su actual: {actual_user}')
         return actual_user
     else:
-        #request_new_users()
+        # request_new_users()
         print('request new users')
+
+
+# пробная функция показа пользователей из избранного
+def show_favorites_users(user_id):
+    favorites = db_obj.show_favorites(conn, user_id)
+    if not favorites:
+        send_message(user_id, f"Sorry, but you haven't favorites")
+    else:
+        for item in favorites:
+            send_message(user_id, f'{item.name} {item.surname} {item.url}')
+    return favorites
+
+
+# пробная функция по добавлению в черный список
+def add_into_blacklist(user_id, own_id):
+    possible_block = db_obj.check_if_in_blacklist(conn, user_id, own_id)
+    if not possible_block:
+        db_obj.add_user_to_blacklist(conn, own_id, user_id)
+        send_message(user_id, f"User {own_id} was added into blacklist")
+    else:
+        send_message(user_id, f'Sorry, but this user already in blacklist')
+
+    return possible_block
+
+
+# пробная функция показа тех кто в чс
+def show_black_list(user_id):
+    black_list = db_obj.show_all_blacklist(conn, user_id)
+
+    if not black_list:
+        send_message(user_id, f"Your blacklist is clear")
+    else:
+        for item in black_list:
+            send_message(user_id, f'{item.name} {item.surname} {item.url}')
+
+    return black_list
 
 
 for event in VkLongPoll(session).listen():
@@ -99,7 +125,7 @@ for event in VkLongPoll(session).listen():
         user_info = get_user_info(user_id)
 
         keyboard = VkKeyboard(one_time=False)
-        buttons = ['next', 'save', 'block', 'write']
+        buttons = ['next', 'save', 'block', 'restart']
         buttons_colors = [VkKeyboardColor.SECONDARY, VkKeyboardColor.POSITIVE,
                           VkKeyboardColor.NEGATIVE, VkKeyboardColor.PRIMARY]
         for btn, btn_color in zip(buttons, buttons_colors):
@@ -110,10 +136,12 @@ for event in VkLongPoll(session).listen():
             send_message(user_id, 'Например: женский 25-30 Москва', keyboard)
 
 
-            db_obj.add_user(user_info.id, user_info.name, user_info.surname, user_info.bdate,
+            db_obj.add_user(db_obj. conn, user_info.id, user_info.name, user_info.surname, user_info.bdate,
                             user_info.gender, user_info.city, user_info.url)
 
             users_to_be_shown = []
+            user_shown = None
+
         if check_str(r'[Аа-яЯ]{7}\s\d{2}-\d{2}\s[Аа-яЯ]+', text):
             new_params = search_params(text)
             peoples = search_possible_pair(new_params[0], new_params[1][:2],
@@ -124,59 +152,33 @@ for event in VkLongPoll(session).listen():
             send_message(user_id, 'Подождите, идет загрузка результатов ...')
 
             for item in peoples:
-                # id_user = int(item[-1])
-                # photos_user = get_photos(id_user)
-                # send_message(user_id, f'{str(item[0])} {item[1]} {item[2]}')
-
                 id_user = int(item.id)
 
-                db_obj.add_possible_pair(user_id, id_user, item.name, item.surname, item.bdate, item.gender, item.city, item.url)
+                db_obj.add_possible_pair(db_obj.conn, user_id, id_user, item.name, item.surname, item.bdate, item.gender, item.city, item.url)
 
                 photos_user = get_photos(id_user)
 
                 if len(photos_user) > 0:
-                    db_obj.add_user_photos(id_user, photos_user)
+                    db_obj.add_user_photos(db_obj.conn, id_user, photos_user)
 
-            users_to_be_shown = db_obj.select_next_users(user_id)
-            print(f' from select: {users_to_be_shown}')
-            print(f' from select: {users_to_be_shown[0].photos_dict}')
-            show_one_user(user_id, users_to_be_shown)
-
-            #     if len(first_photos) == 0:
-            #         for photo_link, photo_like in photos_user.items():
-            #             first_photos[photo_link] = photo_like
-            #             send_message(user_id, f'{str(photo_link)}')
-            #
-            # if len(peoples) > 0:
-            #     item = peoples[0]
-            #     send_message(user_id, f'{item.name} {item.surname} {item.url}')
-            #
-            #     user_info.already_viewed.append(item.id)
-            #
-            #     for photo_link, photo_like in first_photos.items():
-            #
-            #         first_photos[photo_link] = photo_like
-            #         send_message(user_id, f'{str(photo_link)}')
-
-
-
-                # for photo_link, photo_like in photos_user.items():
-                #
-                #     send_message(user_id, f'{str(photo_link)}')
+            users_to_be_shown = db_obj.get_users_info(db_obj.conn, user_id)
+            user_shown = show_one_user(user_id, users_to_be_shown)
 
         elif text == 'next':
-            print(f'next knopka: {users_to_be_shown}')
-            show_one_user(user_id, users_to_be_shown)
+            user_shown = show_one_user(user_id, users_to_be_shown)
 
+        elif text == 'save' and user_shown:
+            db_obj.add_user_to_favourites(db_obj.conn, user_id, user_shown.id)
 
-#виджет ожидания, пока не загрузятся фото
-#в фавориты в БД
-#в черный список в БД
+        elif text == 'block' and user_shown:
+            db_obj.add_user_to_blacklist(db_obj.conn, user_id, user_shown.id)
+        elif text == 'restart':
+            print('restart')
+            db_obj.disconnect()
 
-#запрос на следующих пользователей, старотовать с начала? как соотнести с БД
-#убрать принты и возможные ошибки
+# виджет ожидания, пока не загрузятся фото
+# в фавориты в БД
+# в черный список в БД
 
-
-
-
-# bot работает, все присылает, но вылетает исключение если профиль закрыт, добавлю try exept но уже завтра
+# запрос на следующих пользователей, старотовать с начала? как соотнести с БД
+# убрать принты и возможные ошибки
