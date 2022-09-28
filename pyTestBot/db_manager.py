@@ -174,6 +174,28 @@ class DBObject:
 
         return user_info_list
 
+# пробная функция выборки пользователей из избранного, уверен ты сделаешь ее лучше
+    def show_favorites(self, id):
+        cur.execute("""
+            SELECT * FROM user_favorite_list
+            WHERE favorite_id = %s;
+        """, (id,))
+
+        favorites = cur.fetchall()
+
+        return favorites
+
+# Ппробная функция для показа тех кто в черном списке
+    def show_all_blaclist(self, id):
+        cur.execute("""
+            SELECT * FROM user_black_list
+            WHERE id = %s;
+        """, (id,))
+
+        black_list = cur.fetchall
+
+        return black_list
+
 
 if __name__ == '__main__':
     db_obj = DBObject('vkinder', 'postgres', 'python123')
