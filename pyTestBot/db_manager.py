@@ -21,7 +21,6 @@ class DBObject:
             DROP TABLE IF EXISTS user_vk;
         """)
 
-
         cur.execute("""
             CREATE TABLE IF NOT EXISTS user_vk(
                 id INTEGER PRIMARY KEY,
@@ -38,7 +37,7 @@ class DBObject:
             CREATE TABLE IF NOT EXISTS user_photo(
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES user_vk(id),
-                foto_link VARCHAR(10000) NOT NULL UNIQUE,
+                foto_link VARCHAR(10000) NOT NULL,
                 likes INTEGER NOT NULL
             );
         """)
@@ -67,30 +66,57 @@ class DBObject:
             );
         """)
 
-    def add_user(self, conn, own_id, name, surname, b_date, gender, city, profile_link):
+    def if_user_exists(self, conn, own_id):
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
-            VALUES(%s, %s, %s, %s, %s, %s, %s);
-        """, (own_id, name, surname, b_date, gender, city, profile_link))
+                    SELECT * FROM user_vk
+                    WHERE id = %s;
+                """, (own_id,))
+
+        user_id = cur.fetchall()
+        print(f'user id: {user_id}')
         conn.commit()
+        return len(user_id)
+
+    def if_pair_exists(self, conn, own_id, pair_id):
+        cur = conn.cursor()
+        cur.execute("""
+                    SELECT id FROM possible_pair
+                    WHERE user_id = %s AND pair_id = %s;
+                """, (own_id, pair_id))
+
+        pair_id = cur.fetchall()
+        print(f'pair id: {pair_id}')
+        conn.commit()
+        return len(pair_id)
+
+    def add_user(self, conn, own_id, name, surname, b_date, gender, city, profile_link):
+        user_check = self.if_user_exists(conn, own_id)
+        if user_check == 0:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
+                VALUES(%s, %s, %s, %s, %s, %s, %s);
+            """, (own_id, name, surname, b_date, gender, city, profile_link))
+            conn.commit()
 
     def add_possible_pair(self, conn, own_id, vk_id, name, surname, b_date, gender, city, profile_link):
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
-            VALUES(%s, %s, %s, %s, %s, %s, %s);
-        """, (vk_id, name, surname, b_date, gender, city, profile_link))
-        conn.commit()
-        cur_a = conn.cursor()
-        cur_a.execute("""
-            INSERT INTO possible_pair(user_id, pair_id) VALUES(%s, %s);
-        """, (own_id, vk_id))
-        conn.commit()
+        pair_check = self.if_pair_exists(conn, own_id, vk_id)
+        if pair_check == 0:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO user_vk(id, name, surname, b_date, gender, city, profile_link) 
+                VALUES(%s, %s, %s, %s, %s, %s, %s);
+            """, (vk_id, name, surname, b_date, gender, city, profile_link))
+            conn.commit()
+            cur_a = conn.cursor()
+            cur_a.execute("""
+                INSERT INTO possible_pair(user_id, pair_id) VALUES(%s, %s);
+            """, (own_id, vk_id))
+            conn.commit()
 
     def add_user_photos(self, conn, vk_id, photo_dict: dict):
         cur = conn.cursor()
-        # проверить правильность добавления!!
         for link, likes in photo_dict.items():
             cur.execute("""
                 INSERT INTO user_photo(user_id, foto_link, likes) VALUES(%s, %s, %s);
@@ -108,7 +134,7 @@ class DBObject:
     def check_if_in_favourites(self, conn, own_id, id):
         cur = conn.cursor()
         cur.execute("""
-            SELECT vk_id FROM user_favorite_list
+            SELECT favourite_id FROM user_favorite_list
             WHERE user_id = %s;
         """, (own_id,))
 
@@ -122,7 +148,7 @@ class DBObject:
         return False
 
     def add_user_to_blacklist(self, conn, own_id, vk_id):
-        if not self.check_if_in_blacklist(conn, own_id, id):
+        if not self.check_if_in_blacklist(conn, own_id, vk_id):
             cur = conn.cursor()
             cur.execute("""
                 INSERT INTO user_black_list(user_id, blocked_id) VALUES(%s, %s);
@@ -204,7 +230,6 @@ class DBObject:
 
         return user_info_list
 
-    # нужны ли эти функции??
     def show_favorites(self, conn, own_id):
         cur = conn.cursor()
         cur.execute("""
@@ -218,7 +243,7 @@ class DBObject:
         user_info_list = []
         if len(favorites) > 0:
             ids = [elem[0] for elem in favorites]
-            if id in ids:
+            for id in ids:
                 cur = conn.cursor()
                 cur.execute("""
                 SELECT * FROM user_vk
@@ -235,9 +260,9 @@ class DBObject:
                     photos_dict = self.get_user_photos(conn, id)
                     user_info.photos_dict = photos_dict
                     user_info_list.append(user_info)
+
         return user_info_list
 
-    # нужны ли эти функции??
     def show_all_blacklist(self, conn, own_id):
         cur = conn.cursor()
         cur.execute("""
@@ -245,13 +270,13 @@ class DBObject:
             WHERE user_id = %s;
         """, (own_id,))
 
-        black_list = cur.fetchall
+        black_list = cur.fetchall()
         conn.commit()
 
         user_info_list = []
         if len(black_list) > 0:
             ids = [elem[0] for elem in black_list]
-            if id in ids:
+            for id in ids:
                 cur = conn.cursor()
                 cur.execute("""
                         SELECT * FROM user_vk
