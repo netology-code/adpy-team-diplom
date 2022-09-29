@@ -199,8 +199,5 @@ for event in VkLongPoll(session).listen():
             show_black_list(conn, user_id)
 
 # TODO:
-
 # тесты
-# документация
-# бд схема
-# добавить requirements.txt
+
