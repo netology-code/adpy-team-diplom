@@ -1,0 +1,2 @@
+pip install vk_api
+pip install psycopg2
