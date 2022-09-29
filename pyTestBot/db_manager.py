@@ -25,7 +25,7 @@ class DBObject:
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(40) NOT NULL,
                 surname VARCHAR(40) NOT NULL,
-                b_date DATE NOT NULL DEFAULT CURRENT_DATE,
+                b_date DATE DEFAULT CURRENT_DATE,
                 gender VARCHAR(20) NOT NULL,
                 city VARCHAR(20),
                 profile_link VARCHAR(60) NOT NULL UNIQUE

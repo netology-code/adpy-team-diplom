@@ -117,7 +117,7 @@ def show_black_list(conn, user_id):
 def search_pairs(new_params, user_id):
     if new_params != '':
         peoples = search_possible_pair(new_params[0], new_params[1][:2],
-                                       new_params[1][3:], new_params[2])
+                                       new_params[1][3:], new_params[2], int(new_params[3]))
 
         first_photos = {}
 
@@ -163,8 +163,8 @@ for event in VkLongPoll(session).listen():
         keyboard.add_button("blocked list", color=vk_api.keyboard.VkKeyboardColor.NEGATIVE)
 
         if text == 'привет':
-            send_message(user_id, 'Привет, для поиска пары введи: пол, возраст от и до, город', keyboard)
-            send_message(user_id, 'Например: женский 25-30 Москва', keyboard)
+            send_message(user_id, 'Привет, для поиска пары введи: пол, возраст от и до, город, максимальное кол-во пользователй (до 99)', keyboard)
+            send_message(user_id, 'Например: женский 25-30 Москва 10', keyboard)
 
 
             db_obj.add_user(db_obj. conn, user_info.id, user_info.name, user_info.surname, user_info.bdate,
@@ -173,7 +173,7 @@ for event in VkLongPoll(session).listen():
             users_to_be_shown = []
             user_shown = None
 
-        if check_str(r'[Аа-яЯ]{7}\s\d{2}-\d{2}\s[Аа-яЯ]+', text):
+        if check_str(r'[Аа-яЯ]{7}\s\d{2}-\d{2}\s[Аа-яЯ]+\s\d{2}', text):
             new_params = search_params(text)
             users_to_be_shown, user_shown = search_pairs(new_params, user_id)
         elif text == 'next':
@@ -186,11 +186,21 @@ for event in VkLongPoll(session).listen():
             add_into_blacklist(conn, user_id, user_shown.id)
         elif text == 'restart':
             print('restart')
+            db_obj.disconnect()
             users_to_be_shown = []
             user_shown = None
             new_params = ''
+            db_obj.connect()
+            conn = db_obj.conn
             send_message(user_id, 'Перезапуск. Наберите "Привет"')
         elif text == 'favourites list':
             show_favorites_users(conn, user_id)
         elif text == 'blocked list':
             show_black_list(conn, user_id)
+
+# TODO:
+
+# тесты
+# документация
+# бд схема
+# добавить requirements.txt
