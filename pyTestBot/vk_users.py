@@ -1,13 +1,21 @@
+<<<<<<< HEAD
 import json
+=======
+>>>>>>> 4140366ff9c57f7c311954b94769d589a581737e
 import vk_api
 from configures import token_vk, bot_token
 from VKUser import VKUser
 
+<<<<<<< HEAD
 
+=======
+#получаем инфу о пользователе
+>>>>>>> 4140366ff9c57f7c311954b94769d589a581737e
 def get_user_info(user_id):
     vk = vk_api.VkApi(token=bot_token)
     response = vk.method('users.get', {'user_ids': user_id, 'fields': 'bdate, sex, city, relation'})
 
+<<<<<<< HEAD
     if 'city' in response[0]:
         city = response[0]['city']['title']
     else:
@@ -21,6 +29,12 @@ def get_user_info(user_id):
 
     info = VKUser(response[0]['id'], response[0]['first_name'], response[0]['last_name'], bdate,
                   response[0]['sex'], city)
+=======
+    city_if_closed =  response[0]['city']['title']
+
+    info = VKUser(response[0]['id'], response[0]['first_name'], response[0]['last_name'],
+                  response[0]['bdate'], response[0]['sex'], city_if_closed)
+>>>>>>> 4140366ff9c57f7c311954b94769d589a581737e
     info.url = f"https://vk.com/id{response[0]['id']}"
 
     return info
@@ -31,7 +45,11 @@ def search_possible_pair(sex, age_from, age_to, city):
     vk = vk_api.VkApi(token=token_vk)
     response = vk.method('users.search', {'sex': sex, 'status': 6, 'age_from': age_from,
                                           'age_to': age_to, 'has_photo': 1,
+<<<<<<< HEAD
                                           'count': 100, 'online': 0, 'hometown': city})
+=======
+                                          'count': 10, 'online': 0, 'hometown': city})
+>>>>>>> 4140366ff9c57f7c311954b94769d589a581737e
 
     for item in response['items']:
         vk_user = get_user_info(item['id'])
@@ -66,3 +84,7 @@ def get_photos(person_id):
         user_photos_dict[photo[1]] = photo[0]
 
     return user_photos_dict
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4140366ff9c57f7c311954b94769d589a581737e

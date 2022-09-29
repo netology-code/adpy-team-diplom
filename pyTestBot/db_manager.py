@@ -1,6 +1,10 @@
 import psycopg2
 from VKUser import VKUser
 from configures import database, user, password
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4140366ff9c57f7c311954b94769d589a581737e
 
 
 class DBObject:
