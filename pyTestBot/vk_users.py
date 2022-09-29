@@ -1,6 +1,5 @@
 import json
 import vk_api
-from datetime import date, datetime
 from configures import token_vk, bot_token
 from VKUser import VKUser
 
@@ -14,17 +13,11 @@ def get_user_info(user_id):
     else:
         city = 'Город не указан'
 
-    today = date.today()
     if 'bdate' in response[0]:
-        age = response[0]['bdate'].split('.')
-        if len(age) == 3:
-            birth_date = date(int(age[2]), int(age[1]), int(age[0]))
-            bdate = today.year - birth_date.year - ((today.month, today.day) <
-                                                    (birth_date.month, birth_date.day))
-        else:
-            bdate = 'не указан возраст'
+        bdate = response[0]['bdate']
+
     else:
-         bdate = 'не указан возраст'
+        bdate = 'не указан возраст'
 
     info = VKUser(response[0]['id'], response[0]['first_name'], response[0]['last_name'], bdate,
                   response[0]['sex'], city)
