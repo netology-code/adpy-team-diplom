@@ -14,17 +14,11 @@ def get_user_info(user_id):
 
     if 'bdate' in response[0]:
         bdate = response[0]['bdate']
-
     else:
         bdate = 'не указан возраст'
 
     info = VKUser(response[0]['id'], response[0]['first_name'], response[0]['last_name'], bdate,
                   response[0]['sex'], city)
-
-    city_if_closed =  response[0]['city']['title']
-
-    info = VKUser(response[0]['id'], response[0]['first_name'], response[0]['last_name'],
-                  response[0]['bdate'], response[0]['sex'], city_if_closed)
 
     info.url = f"https://vk.com/id{response[0]['id']}"
 
