@@ -29,7 +29,7 @@ def get_user_info(user_id):
     return info
 
 
-# отправляет запросы к ВК, количество предложенных запросов в параметре count
+#отправляет запросы к ВК, количество предложенных запросов в параметре count
 def search_possible_pair(sex, age_from, age_to, city, count):
     possible_list = []
     vk = vk_api.VkApi(token=token_vk)
