@@ -25,9 +25,8 @@ class VkForParsInfo:
                         for key, value in each_photo_info.items():
                             if key == 'likes':
                                 likes = value.get('count')
-                            if key == 'sizes':
-                                sorted_pic = (sorted(value, key=lambda d: d['height']))[-5:]
-                                photo_info['url'] = sorted_pic[-1].get('url')
+                            if key == 'id':
+                                photo_info['photo_id'] = value
                         photo_info['likes'] = likes
                         photos_json.append(photo_info)
                         sorted_likes = sorted(photos_json, key=lambda k: k['likes'])[-3:]
@@ -35,14 +34,20 @@ class VkForParsInfo:
 
         return sorted_likes
 
-    def users_get_free(self, sex, get_city): #сюда принимаем из бота настройки для поиска, сюда ещё допишу возраст от и до.
+    def users_get_free(self, sex, get_city, age_from, bot_people_id): #сюда принимаем из бота настройки для поиска
         self.sex = sex
         self.city_id = get_city
+        self.age_from = age_from
+        self.age_to = age_from + 4
+        self.bot_people_id = bot_people_id
         url = 'https://api.vk.com/method/users.search'
-        params_1 = {'sort': 1, 'sex': self.sex, 'count': 10, 'fields': ['bdate'], 'hometown': self.city_id,
-                    'has_photo': 1, 'status': 1,
-                    'can_access_closed': 1}
+        params_1 = {
+                    'sort': 0, 'sex': self.sex, 'count': 3, 'city': self.city_id,
+                    'has_photo': 1, 'age_from': self.age_from, "age_to": self.age_to,
+                    'can_access_closed': 1
+                    }
         response_1 = requests.get(url, params={**self.params, **params_1}).json()
+        spisok = []
         users_data = {}
         users_dates = []
         for item in response_1.values(): # все эти циклы написаны по примеру того, как мы решали это в проекте с вк-яндекс
@@ -50,8 +55,6 @@ class VkForParsInfo:
                 if keys == 'items':
                     for list in values:
                         for key, value in list.items():
-                            if key == 'bdate':
-                                birthday = value
                             if key == 'first_name':
                                 name = value
                             if key == 'id':
@@ -64,18 +67,17 @@ class VkForParsInfo:
                                 else:
                                     users_data['first_name'] = name
                                     users_data['last_name'] = surname
-                                    users_data['bdate'] = birthday
                                     users_data['link'] = f'https://vk.com/id{user_id}'
                                     photos = self.users_photo(idss=user_id)
-                                    num = 0
                                     if photos != []:
                                         for photo in photos:
                                             for keys, values in photo.items():
-                                                if keys == 'url':
-                                                    num += 1
-                                                    users_data[f'{keys} {num}'] = values
+                                                if keys == 'photo_id':
+                                                    spisok.append(values)
+                                                    users_data[f'{keys}'] = spisok
                                         users_dates.append(users_data)
                                         users_data = {}
-            with open('../database.json', 'w', encoding='utf8') as f:
+                                        spisok=[]
+            with open(f'{self.bot_people_id}_data.json', 'w', encoding='utf8') as f:
                 json.dump(users_dates, f, sort_keys=False, ensure_ascii=False, indent=2)
-            return print("Done")
+                return print("Done")
