@@ -1,8 +1,7 @@
 import json
-from vk_api.utils import get_random_id
 from vkbottle.bot import Bot, Message
 from vkbottle import CtxStorage, BaseStateGroup, API  # FSM
-from vkbottle import Keyboard, KeyboardButtonColor, Text, OpenLink, Location, EMPTY_KEYBOARD  # Keyboards
+from vkbottle import Keyboard, KeyboardButtonColor, Text
 from config import token_for_bot, token_for_app
 from app.registration import VKRegistration
 from app.get_info import VkForParsInfo
@@ -50,7 +49,7 @@ async def reg_handler(message: Message):
     user = await bot.api.users.get(message.from_id)
     print(user[0].id)
     registration(user[0].id)
-    await message.answer('Регистрация завершена', keyboard=run_keyboard)
+    await message.answer('Добро пожаловать в бота знакомств, давайте настроим поиск', keyboard=run_keyboard)
 
 ctx = CtxStorage()  # Хранилище для FSM
 
@@ -103,16 +102,22 @@ async def run_searching_age(message: Message):
 
 @bot.on.message(text='Следующий пользователь')
 async def info_next_user(message: Message):
-    with open(f'{message.from_id}_data.json', 'r', encoding='utf8') as f:
-        data = json.load(f)
+    vk.users_get_free(sex=1, get_city=1, age_from=18, bot_people_id=message.from_id) # тут я вставил для проверки параметры которые должен указывать пользователь.
+    with open(f'{message.from_id}_data.json', 'r', encoding='utf8') as f:            # фукнция vk.users_get_free из файла get_info. она каждый раз принимает настройки человека который в боте ищет кого-то
+        data = json.load(f)                                                          # чтобы у каждого пользователя были свои настройки тут нужна база данных, которая будет вызываться и передавать значения
+        if data == []:                                                               # в мою функцию
+            await message.answer(message='Данный пользователь недоступен') # <- это когда пользователь закрыт и джсон становится пустой
         for i in data:
             await message.answer(f'ЧЕЛОВЕК НАЙДЕН: {i["first_name"]} {i["last_name"]}. \n {i["link"]}')
-            for b in data[0]['photo_id']:
-                print(f'photo{i["link"][17::]}_{b}')
-                aza = f'photo{i["link"][-16::]}_{b}'
-                await bot.api.messages.send(message='ку', random_id=get_random_id(), attachment=aza, peer_id=message.peer_id) # Это не работает
-#
-# bot.api.photos.get_upload_server()
+            for info in i['photo_id']:
+                photo = f'photo{i["link"][17::]}_{info}'
+                await message.answer(attachment=photo)
 
+# @bot.on.message(text='Избранное')
+# async def info_next_user(message: Message): в избранном я думаю достаточно чтобы просто выдавало список ссылок на людей, которых человек добавит
+#
+# @bot.on.message(text='Добавить в Избранное')
+# async def info_next_user(message: Message):  # будем парсить джсон с людьми которых мы нашли, у каждого человека будет создаваться файл в котором есть вся инфа по человеку которого ему выдало
+# оттуда можно достать всю нужню инфу и сохранить в базу данных, чтобы потом вызывать в избранном.
 
 bot.run_forever()  # Вечной жизни ботам!]

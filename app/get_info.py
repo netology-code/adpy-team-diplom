@@ -1,5 +1,6 @@
 import requests
 import json
+import random
 
 #класс получения информации и фотографий людей.
 class VkForParsInfo:
@@ -25,6 +26,9 @@ class VkForParsInfo:
                         for key, value in each_photo_info.items():
                             if key == 'likes':
                                 likes = value.get('count')
+                            if key == 'sizes':
+                                sorted_pic = (sorted(value, key=lambda d: d['height']))[-5:]
+                                photo_info['url'] = sorted_pic[-1].get('url')
                             if key == 'id':
                                 photo_info['photo_id'] = value
                         photo_info['likes'] = likes
@@ -40,20 +44,25 @@ class VkForParsInfo:
         self.age_from = age_from
         self.age_to = age_from + 4
         self.bot_people_id = bot_people_id
+        self.offset = random.randint(1, 999)
         url = 'https://api.vk.com/method/users.search'
         params_1 = {
-                    'sort': 0, 'sex': self.sex, 'count': 3, 'city': self.city_id,
+                    'sort': 0, 'offset': self.offset, 'sex': self.sex, 'count': 1, 'city': self.city_id,
                     'has_photo': 1, 'age_from': self.age_from, "age_to": self.age_to,
-                    'can_access_closed': 1
+                    'is_closed': False
                     }
+        # настройки у вк апи очень плохо работают когда я пишу is_closed 0 значит я хочу искать открытые аккаунты, но мне всё равно выдает закрытые и тогда джсон будет пустой
+        # это всё я описал в боте
         response_1 = requests.get(url, params={**self.params, **params_1}).json()
         spisok = []
+        spisok_url = []
         users_data = {}
         users_dates = []
         for item in response_1.values(): # все эти циклы написаны по примеру того, как мы решали это в проекте с вк-яндекс
             for keys, values in item.items():
                 if keys == 'items':
                     for list in values:
+                        print(list)
                         for key, value in list.items():
                             if key == 'first_name':
                                 name = value
@@ -61,8 +70,8 @@ class VkForParsInfo:
                                 user_id = value
                             if key == 'last_name':
                                 surname = value
-                            if key == 'can_access_closed':
-                                if value == False:
+                            if key == 'is_closed':
+                                if value == True:
                                     continue
                                 else:
                                     users_data['first_name'] = name
@@ -75,9 +84,14 @@ class VkForParsInfo:
                                                 if keys == 'photo_id':
                                                     spisok.append(values)
                                                     users_data[f'{keys}'] = spisok
+                                                if keys == 'url':
+                                                    spisok_url.append(values)
+                                                    users_data[f'{keys}'] = spisok_url
                                         users_dates.append(users_data)
                                         users_data = {}
                                         spisok=[]
-            with open(f'{self.bot_people_id}_data.json', 'w', encoding='utf8') as f:
-                json.dump(users_dates, f, sort_keys=False, ensure_ascii=False, indent=2)
+                                        spisok_url = []
+
+            with open(f'{self.bot_people_id}_data.json', 'w', encoding='utf8') as f: # тут создается джсон для каждого пользователя бота, с людьми которые будут ему высвечиваться
+                json.dump(users_dates, f, sort_keys=False, ensure_ascii=False, indent=2) # после каждого вызова джсон будет обновляться и писать инфу по 1 человеку которого найдет апка
                 return print("Done")
