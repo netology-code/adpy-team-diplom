@@ -32,6 +32,7 @@ class VKAPI:
             if not candidate['is_closed'] \
                     or candidate['can_access_closed']:
                 list_of_candidates.append({
+                    'id': candidate['id'],
                     'first_name': candidate['first_name'],
                     'last_name': candidate['last_name'],
                     'link': f'https://vk.com/id{candidate["id"]}',
