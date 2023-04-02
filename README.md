@@ -3,6 +3,7 @@
 Не забудьте заполнить файл setting.ini
 
 if __name__ == '__main__':
+
     peoples = Peoples()
     photos = Photos()
     favorite_people = Favorite()
