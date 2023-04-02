@@ -3,7 +3,7 @@
 Не забудьте заполнить файл setting.ini
 
 
-if __name__ == '__main__': #пример 
+#пример 
 
     peoples = Peoples()
     photos = Photos()
