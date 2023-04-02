@@ -52,9 +52,9 @@ class Peoples:
                 JOIN
                     {table_name} on peoples.peoples_id = {table_name}.peoples_id;
                 ''')
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
             return
 
@@ -68,9 +68,9 @@ class Peoples:
                 FROM 
                     {self.table_name};
                 ''')
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
             return
 
@@ -88,9 +88,9 @@ class Peoples:
                     and
                     last_name = %s;
                 ''', (first_name, last_name))
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
             return
 
@@ -106,9 +106,9 @@ class Peoples:
                 WHERE 
                     age between %s and %s;
                 ''', (start, stop))
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
             return
 
@@ -124,7 +124,7 @@ class Peoples:
                 WHERE 
                     city = %s;
                 ''', (city,))
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
             return response[1]
         except:
@@ -142,9 +142,9 @@ class Peoples:
                 WHERE 
                     sex = %s;
                 ''', (sex,))
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
             return
 
@@ -171,9 +171,9 @@ class Peoples:
                     and
                     sex = %s;
                 ''', (first_name, last_name, min_age, max_age, city, sex))
-                response = ('fetchall', cur.fetchall())
+                response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
             return
 
