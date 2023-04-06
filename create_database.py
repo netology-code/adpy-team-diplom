@@ -48,7 +48,7 @@ class CreateDatabase:
                     last_name VARCHAR(40),
                     age INTEGER,
                     city VARCHAR(40),
-                    sex VARCHAR(20)
+                    sex INTEGER CHECK (sex >= 0) CHECK (sex <= 2)
                 );
                 ''')
 

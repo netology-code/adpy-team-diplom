@@ -13,7 +13,7 @@
     # добавим нового человека.
     candidate = {
         'id_vk': 1, 'first_name': 'Grisha', 'last_name': 'Petrov',
-        'age': 45, 'city': 'Москва', 'sex': 'male'
+        'age': 45, 'city': 'Москва', 'sex': '0'
     }
 
     links = ['https://...', 'https://....', 'https://.....']
@@ -51,7 +51,7 @@
     print()
 
     # выборка по полу
-    pprint(peoples.search_sex('famale'))
+    pprint(peoples.search_sex(0))
     print()
 
     # удалить из избранного списка
@@ -71,5 +71,5 @@
 
     # выборка по всем параметрам
     pprint(peoples.search_all_parameters(
-        'Grisha', 'Petrov', 'Москва', 'male', 18, 46
+        'Grisha', 'Petrov', 'Москва', 0, 18, 46
     ))

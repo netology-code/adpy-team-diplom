@@ -130,7 +130,7 @@ class Peoples:
         except:
             return
 
-    def search_sex(self, sex: str):
+    def search_sex(self, sex: int):
         try:
             conn = self.connect()
             with conn.cursor() as cur:
@@ -149,7 +149,7 @@ class Peoples:
             return
 
     def search_all_parameters(
-            self, first_name: str, last_name: str, city: str, sex: str,
+            self, first_name: str, last_name: str, city: str, sex: int,
             min_age=0, max_age=100
     ):
         try:
