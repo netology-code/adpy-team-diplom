@@ -60,7 +60,6 @@ class CreateDatabase:
                         REFERENCES peoples(peoples_id) ON DELETE CASCADE
                 );
                 ''')
-                conn.commit()
 
                 cur.execute('''
                 CREATE TABLE IF NOT EXISTS favorite_people(
@@ -69,7 +68,6 @@ class CreateDatabase:
                         REFERENCES peoples(peoples_id) ON DELETE CASCADE
                 );
                 ''')
-                conn.commit()
 
                 cur.execute('''
                 CREATE TABLE IF NOT EXISTS black_list(
@@ -78,8 +76,7 @@ class CreateDatabase:
                         REFERENCES peoples(peoples_id) ON DELETE CASCADE
                 );
                 ''')
-                conn.commit()
-
+        conn.close()
         print(f'Таблицы созданы успешно.')
         return
 

@@ -23,11 +23,11 @@ class Peoples:
             return
 
     def insert(self, dict_: dict):
+        conn = self.connect()
         try:
             column_name = [el for el in dict_.keys()]
             value = [el for el in dict_.values()]
             s = ', '.join(['%s'] * len(dict_))
-            conn = self.connect()
             conn.cursor().execute(f'''
             INSERT INTO 
                 {self.table_name}({', '.join(column_name)}) 
@@ -38,11 +38,12 @@ class Peoples:
             conn.close()
             return
         except:
+            conn.close()
             return
 
     def select(self, table_name: str):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT
@@ -56,11 +57,12 @@ class Peoples:
             conn.close()
             return response
         except:
+            conn.close()
             return
 
     def get_all(self):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
@@ -72,11 +74,12 @@ class Peoples:
             conn.close()
             return response
         except:
+            conn.close()
             return
 
     def search_name(self, first_name: str, last_name: str):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
@@ -92,11 +95,12 @@ class Peoples:
             conn.close()
             return response
         except:
+            conn.close()
             return
 
     def search_age(self, start=0, stop=100):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
@@ -110,11 +114,12 @@ class Peoples:
             conn.close()
             return response
         except:
+            conn.close()
             return
 
     def search_city(self, city: str):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
@@ -126,13 +131,14 @@ class Peoples:
                 ''', (city,))
                 response = cur.fetchall()
             conn.close()
-            return response[1]
+            return response
         except:
+            conn.close()
             return
 
     def search_sex(self, sex: int):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
@@ -146,14 +152,15 @@ class Peoples:
             conn.close()
             return response
         except:
+            conn.close()
             return
 
     def search_all_parameters(
             self, first_name: str, last_name: str, city: str, sex: int,
             min_age=0, max_age=100
     ):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
@@ -175,6 +182,7 @@ class Peoples:
             conn.close()
             return response
         except:
+            conn.close()
             return
 
     def check(self, peoples_id: int, table_name: str):
@@ -186,15 +194,11 @@ class Peoples:
 
     def get_id(self, first_name: str, last_name: str):
         people_id = self.search_name(first_name, last_name)
-        if len(people_id) > 1:
-            people_id = [id_[0] for id_ in people_id]
-            return people_id
-        else:
-            return people_id
+        return people_id[0][0]
 
     def delete(self, people_id):
+        conn = self.connect()
         try:
-            conn = self.connect()
             with conn.cursor() as cur:
                 cur.execute(f'''
                 DELETE FROM 
@@ -206,6 +210,7 @@ class Peoples:
             conn.close()
             return
         except:
+            conn.close()
             return
 
 
@@ -224,31 +229,26 @@ class Favorite(Peoples):
         self.table_name = 'favorite_people'
         self.column_name = 'peoples_id'
 
-    def insert(self, peoples_id):
-        if self.check(peoples_id, 'black_list'):
-            dict_ = {'peoples_id': f'{peoples_id}'}
+    def insert(self, id_):
+        if self.check(id_, 'black_list'):
+            conn = self.connect()
             try:
-                column_name = [el for el in dict_.keys()]
-                value = [el for el in dict_.values()]
-                s = ', '.join(['%s'] * len(dict_))
-                conn = self.connect()
-                conn.cursor().execute(f'''
-                INSERT INTO 
-                    {self.table_name}({', '.join(column_name)}) 
-                VALUES 
-                    ({s});
-                ''', (value))
-                conn.commit()
+                with conn.cursor() as cur:
+                    cur.execute(f'''
+                    INSERT INTO 
+                        {self.table_name}({self.column_name}) 
+                    VALUES 
+                        (%s);
+                    ''', (id_,))
+                    conn.commit()
                 conn.close()
                 return
             except:
+                conn.close()
                 return
         else:
-            print(
-                'Невозможно добавить в избранное, человек находится в чёрном '
-                'списке.'
-            )
-            return
+            return 'Невозможно добавить в избранное, человек находится в ' \
+                   'чёрном списке.'
 
 
 class BlackList(Peoples):
@@ -258,27 +258,23 @@ class BlackList(Peoples):
         self.table_name = 'black_list'
         self.column_name = 'peoples_id'
 
-    def insert(self, peoples_id):
-        if self.check(peoples_id, 'favorite_people'):
-            dict_ = {'peoples_id': f'{peoples_id}'}
+    def insert(self, id_):
+        if self.check(id_, 'favorite_people'):
+            conn = self.connect()
             try:
-                column_name = [el for el in dict_.keys()]
-                value = [el for el in dict_.values()]
-                s = ', '.join(['%s'] * len(dict_))
-                conn = self.connect()
-                conn.cursor().execute(f'''
-                INSERT INTO 
-                    {self.table_name}({', '.join(column_name)}) 
-                VALUES 
-                    ({s});
-                    ''', (value))
-                conn.commit()
+                with conn.cursor() as cur:
+                    cur.execute(f'''
+                                INSERT INTO 
+                                    {self.table_name}({self.column_name}) 
+                                VALUES 
+                                    (%s);
+                                ''', (id_,))
+                    conn.commit()
                 conn.close()
                 return
             except:
+                conn.close()
                 return
         else:
-            print(
-                'Невозможно добавить в чёрный список, человек находится '
-                'в избранном.'
-            )
+            return 'Невозможно добавить в чёрный список, человек находится в ' \
+                   'избранном.'

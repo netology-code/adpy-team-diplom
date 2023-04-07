@@ -13,7 +13,7 @@
     # добавим нового человека.
     candidate = {
         'id_vk': 1, 'first_name': 'Grisha', 'last_name': 'Petrov',
-        'age': 45, 'city': 'Москва', 'sex': '0'
+        'age': 45, 'city': 'Москва', 'sex': 0
     }
 
     links = ['https://...', 'https://....', 'https://.....']
