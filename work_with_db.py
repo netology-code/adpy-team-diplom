@@ -221,6 +221,34 @@ class Photos(Peoples):
         self.table_name = 'photos'
         self.column_name = 'peoples_id'
 
+    def get_photos(self, first_name, last_name):
+        id_ = Peoples().get_id(first_name, last_name)
+        conn = self.connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(f'''
+                SELECT 
+                    link 
+                FROM 
+                    {self.table_name}
+                JOIN 
+                    peoples on 
+                    {self.table_name}.{self.column_name} = (
+                        SELECT 
+                            peoples_id 
+                        FROM 
+                            peoples 
+                        WHERE 
+                        peoples_id={id_}
+                        )
+                ''')
+                response = cur.fetchall()
+            conn.close()
+            return response
+        except:
+            conn.close()
+            return
+
 
 class Favorite(Peoples):
 
