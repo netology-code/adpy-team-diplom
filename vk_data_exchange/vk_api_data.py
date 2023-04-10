@@ -10,37 +10,39 @@ class VKAPI:
         self.vk_version = vk_version
         self.vk_host = vk_host
 
-    def search_candidates(self, age: int, sex: int, city: str) -> list:
+    def search_candidates(self, age: int, sex: int, city: str):
         """
         :param city: city of the candidate
         :param sex: sex of the candidate
         :param age: age of the candidate
-        :return: list of candidates
         """
+        counter = 0
 
-        list_of_candidates = []
-        response = self.vk_api_session.users.search(
-            v=self.vk_version,
-            offset=0,
-            count=1000,
-            sex=sex,
-            age_from=age,
-            age_to=age,
-            city_id=self.get_city_id(city))
+        while True:
+            response = self.vk_api_session.users.search(
+                v=self.vk_version,
+                offset=counter,
+                count=1,
+                sex=sex,
+                age_from=age,
+                age_to=age,
+                city_id=self.get_city_id(city))
 
-        for candidate in response['items']:
-            if not candidate['is_closed'] \
-                    or candidate['can_access_closed']:
-                list_of_candidates.append({
-                    'id': candidate['id'],
-                    'first_name': candidate['first_name'],
-                    'last_name': candidate['last_name'],
-                    'link': f'https://vk.com/id{candidate["id"]}',
-                    'photos_ids': self.get_photos_ids(candidate['id'])
-                })
-                sleep(0.33)
-
-        return list_of_candidates
+            if len(response['items']) == 0:
+                break
+            else:
+                candidate = response['items'][0]
+                counter += 1
+                sleep(0.8)
+                if not candidate['is_closed'] \
+                        or candidate['can_access_closed']:
+                    yield {
+                        'id': candidate['id'],
+                        'first_name': candidate['first_name'],
+                        'last_name': candidate['last_name'],
+                        'link': f'https://vk.com/id{candidate["id"]}',
+                        'photos_ids': self.get_photos_ids(candidate['id'])
+                        }
 
     def get_photos_ids(self, user_id) -> list:
 
