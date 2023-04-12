@@ -37,9 +37,21 @@
     #[{'id': ..., 'first_name': '...', 'last_name': '...', 'link': '...', 'photos_ids': [..., ...]}, {'id': ..., 'first_name': '...', 'last_name': '...', 'link': '...', 'photos_ids': [..., ...]}]
     print(candidates.get_all_favorite())
 
+<<<<<<< HEAD
     #аналогично get_all_favorite()
     print(candidates.get_all_blask())
     
     #удаляет кандидата из списка
     candidates.delete()
+=======
+    # Вернуть фото пользователя
+    print(photos.get_photos('Grisha', 'Petrov'))
+
+    # добавим человека в избранный список для этого нужно получить id
+    # если есть два человека с одинаковым именем и фамилией, тогда вернётся
+    # список с id необходимо запросить у пользователя доп параметры.
+    id_ = peoples.get_id('Grisha', 'Petrov')
+    print(id_)
+    favorite_people.insert(id_)
+>>>>>>> ed815dc66577fbcc898a8824bbe4d9b28286e89d
 

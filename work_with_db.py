@@ -224,11 +224,25 @@ class VKinderDB:
             return
 
 
+<<<<<<< HEAD
     def __check(self, conn, table_name):
+=======
+class Photos(Peoples):
+
+    def __init__(self):
+        super().__init__()
+        self.table_name = 'photos'
+        self.column_name = 'peoples_id'
+
+    def get_photos(self, first_name, last_name):
+        id_ = Peoples().get_id(first_name, last_name)
+        conn = self.connect()
+>>>>>>> ed815dc66577fbcc898a8824bbe4d9b28286e89d
         try:
             with conn.cursor() as cur:
                 cur.execute(f'''
                 SELECT 
+<<<<<<< HEAD
                     user_id
                 FROM 
                     {table_name};
@@ -241,3 +255,83 @@ class VKinderDB:
         except:
             conn.close()
             return
+=======
+                    link 
+                FROM 
+                    {self.table_name}
+                JOIN 
+                    peoples on 
+                    {self.table_name}.{self.column_name} = (
+                        SELECT 
+                            peoples_id 
+                        FROM 
+                            peoples 
+                        WHERE 
+                        peoples_id={id_}
+                        )
+                ''')
+                response = cur.fetchall()
+            conn.close()
+            return response
+        except:
+            conn.close()
+            return
+
+
+class Favorite(Peoples):
+
+    def __init__(self):
+        super().__init__()
+        self.table_name = 'favorite_people'
+        self.column_name = 'peoples_id'
+
+    def insert(self, id_):
+        if self.check(id_, 'black_list'):
+            conn = self.connect()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(f'''
+                    INSERT INTO 
+                        {self.table_name}({self.column_name}) 
+                    VALUES 
+                        (%s);
+                    ''', (id_,))
+                    conn.commit()
+                conn.close()
+                return
+            except:
+                conn.close()
+                return
+        else:
+            return 'Невозможно добавить в избранное, человек находится в ' \
+                   'чёрном списке.'
+
+
+class BlackList(Peoples):
+
+    def __init__(self):
+        super().__init__()
+        self.table_name = 'black_list'
+        self.column_name = 'peoples_id'
+
+    def insert(self, id_):
+        if self.check(id_, 'favorite_people'):
+            conn = self.connect()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(f'''
+                                INSERT INTO 
+                                    {self.table_name}({self.column_name}) 
+                                VALUES 
+                                    (%s);
+                                ''', (id_,))
+                    conn.commit()
+                conn.close()
+                return
+            except:
+                conn.close()
+                return
+        else:
+            return 'Невозможно добавить в чёрный список, человек находится в ' \
+                   'избранном.'
+>>>>>>> ed815dc66577fbcc898a8824bbe4d9b28286e89d
