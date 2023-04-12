@@ -2,74 +2,44 @@
 
 Не забудьте заполнить файл setting.ini
 
+Основные функции:
+    
+    add_favorite() - добавить кондидата в избранный лист(если кондидат находится
+                     в чёрном списке через print можно вернуть предуприждение, 
+                     внутри происходит авто проверка.
+    
+    add_blask() - аналогично add_favorite()
+
+    get_all_favorite() - возвращает всех кондидатов находящихся в 
+                         избранном списке 
+
+    get_all_blask() - аналогично get_all_favorite()
+
+    delete() - удаляет кандидата из списка(не имеет значение в каком он списке
+               происходит каскадное удаление).
+    
+
 
 #пример 
 
-    peoples = Peoples()
-    photos = Photos()
-    favorite_people = Favorite()
-    black_list = BlackList()
+    data = {'id': 111111, 'first_name': 'Ольга', 'last_name': 'Иванова', 'link': 'https://...', 'photos_ids': [1114524351, 11245351]}
+    candidates = VKinderDB(data)
 
-    # добавим нового человека.
-    candidate = {
-        'id_vk': 1, 'first_name': 'Grisha', 'last_name': 'Petrov',
-        'age': 45, 'city': 'Москва', 'sex': 0
-    }
+    candidates.add_favorite()
+    #или вместе с print
+    print(candidates.add_favorite())
 
-    links = ['https://...', 'https://....', 'https://.....']
+    candidates.add_blask()
+    #или вместе с print
+    print(candidates.add_blask())
 
-    # загрузим данные в БД
-    peoples.insert(candidate)
-    id_ = candidate.get('id_vk')
-    # здесь берем именно id_vk так как он является уникальным в отличие от
-    # имени и фамилии
-    for link in links:
-        photo = {'link': link, 'peoples_id': id_}
-        photos.insert(photo)
+    #вернет список словарей
+    #[{'id': ..., 'first_name': '...', 'last_name': '...', 'link': '...', 'photos_ids': [..., ...]}, {'id': ..., 'first_name': '...', 'last_name': '...', 'link': '...', 'photos_ids': [..., ...]}]
+    print(candidates.get_all_favorite())
 
-    # добавим человека в избранный список для этого нужно получить id
-    # если есть два человека с одинаковым именем и фамилией, тогда вернётся
-    # список с id необходимо запросить у пользователя доп параметры.
-    id_ = peoples.get_id('Grisha', 'Petrov')
-    print(id_)
-    favorite_people.insert(id_)
+    #аналогично get_all_favorite()
+    print(candidates.get_all_blask())
+    
+    #удаляет кандидата из списка
+    candidates.delete()
 
-    # добавим человека в чёрный список.
-    id_ = peoples.get_id('Grisha', 'Petrov')
-    black_list.insert(id_)
-
-    # поиск по имени
-    pprint(peoples.search_name('Grisha', 'Petrov'))
-    print()
-
-    # выборка по возрасту
-    pprint(peoples.search_age(21, 35))
-    print()
-
-    # выборка по городу
-    pprint(peoples.search_city('SPB'))
-    print()
-
-    # выборка по полу
-    pprint(peoples.search_sex(0))
-    print()
-
-    # удалить из избранного списка
-    id_ = peoples.get_id('Grisha', 'Petrov')
-    favorite_people.delete(id_)
-
-    # удалить из чёрного списка
-    id_ = peoples.get_id('Grisha', 'Petrov')
-    black_list.delete(id_)
-
-    # удалить из общего списка
-    id_ = peoples.get_id('Grisha', 'Petrov')
-    peoples.delete(id_)
-
-    # получить всех пользоватлей
-    pprint(peoples.get_all())
-
-    # выборка по всем параметрам
-    pprint(peoples.search_all_parameters(
-        'Grisha', 'Petrov', 'Москва', 0, 18, 46
-    ))

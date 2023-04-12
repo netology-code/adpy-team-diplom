@@ -37,43 +37,43 @@ class CreateDatabase:
             return self.data_checking
 
     def create_table(self):
-        with psycopg2.connect(database=f'{self.db_name}', user=self.user,
+        with psycopg2.connect(database=self.db_name, user=self.user,
                               password=self.password) as conn:
             with conn.cursor() as cur:
                 cur.execute('''
-                CREATE TABLE IF NOT EXISTS peoples(
-                    peoples_id SERIAL PRIMARY KEY,
-                    id_vk INTEGER UNIQUE,
+                CREATE TABLE IF NOT EXISTS candidates(
+                    candidate_id SERIAL PRIMARY KEY,
+                    user_id BIGINT UNIQUE NOT NULL,
                     first_name VARCHAR(40),
                     last_name VARCHAR(40),
-                    age INTEGER,
-                    city VARCHAR(40),
-                    sex INTEGER CHECK (sex >= 0) CHECK (sex <= 2)
+                    link VARCHAR(100) UNIQUE
                 );
                 ''')
 
                 cur.execute('''
                 CREATE TABLE IF NOT EXISTS photos(
                     photos_id SERIAL PRIMARY KEY,
-                    link VARCHAR(250) UNIQUE,
-                    peoples_id INTEGER NOT NULL 
-                        REFERENCES peoples(peoples_id) ON DELETE CASCADE
+                    photos_ids BIGINT UNIQUE,
+                    candidate_id INTEGER NOT NULL 
+                        REFERENCES candidates(candidate_id) ON DELETE CASCADE
                 );
                 ''')
 
                 cur.execute('''
-                CREATE TABLE IF NOT EXISTS favorite_people(
-                    favorite_people_id SERIAL PRIMARY KEY,
-                    peoples_id INTEGER UNIQUE NOT NULL 
-                        REFERENCES peoples(peoples_id) ON DELETE CASCADE
+                CREATE TABLE IF NOT EXISTS favorite_list(
+                    favorite_list_id SERIAL PRIMARY KEY,
+                    user_id BIGINT UNIQUE,
+                    candidate_id INTEGER NOT NULL 
+                        REFERENCES candidates(candidate_id) ON DELETE CASCADE
                 );
                 ''')
 
                 cur.execute('''
                 CREATE TABLE IF NOT EXISTS black_list(
                     black_list_id SERIAL PRIMARY KEY,
-                    peoples_id INTEGER UNIQUE NOT NULL 
-                        REFERENCES peoples(peoples_id) ON DELETE CASCADE
+                    user_id INTEGER UNIQUE,
+                    candidate_id INTEGER NOT NULL 
+                        REFERENCES candidates(candidate_id) ON DELETE CASCADE
                 );
                 ''')
         conn.close()
