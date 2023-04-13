@@ -128,13 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-__init__.py
-*/
-Restore.py
 .idea
 .pytest_cache
 __pycache__
 src
 venv
 Puthon
-.idea/
