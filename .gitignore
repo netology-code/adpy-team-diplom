@@ -134,3 +134,6 @@ __pycache__
 src
 venv
 Puthon
+.idea/
+vk_data_exchange/authorization_link.txt
+vk_data_exchange/check_receive_data.py
