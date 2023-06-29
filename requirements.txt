@@ -1,0 +1,4 @@
+greenlet==2.0.2
+python-dotenv==1.0.0
+SQLAlchemy==2.0.17
+typing-extensions==4.7.0
