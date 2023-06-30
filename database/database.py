@@ -5,7 +5,11 @@ from database.models import Base
 
 class Database:
     def __init__(self):
-        dotenv_path = os.path.join(os.path.dirname(__file__), ".envrc")
+        if os.path.join(os.path.dirname(__file__), ".envrc"):
+            path = os.path.split(os.path.dirname(__file__))
+            dotenv_path = os.path.join(path[0], ".envrc")
+        else:
+            dotenv_path = os.path.join(os.path.dirname(__file__), ".envrc")
         if os.path.exists(dotenv_path):
             load_dotenv(dotenv_path)
         self.bd = os.getenv("bd")
