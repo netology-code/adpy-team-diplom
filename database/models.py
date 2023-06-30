@@ -7,26 +7,32 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "user"
 
-    user_id = sq.Column(sq.Integer, primary_key=True)
+    user_id = sq.Column(sq.Bigint, primary_key=True)
     user_name = sq.Column(sq.String(length=50), unique=True)
-    user_gender = sq.Column(sq.String(length=1), nullable=False)
-    user_age = sq.Column(sq.Integer, nullable=False)
-    user_city = sq.Column(sq.String(length=50), nullable=False)
+    search_gender = sq.Column(sq.String(length=1), nullable=False)
+    search_age = sq.Column(sq.Integer, nullable=False)
+    search_city = sq.Column(sq.String(length=50), nullable=False)
 
-class Friend(Base):
-    __tablename__ = "friend"
+class Favorite(Base):
+    __tablename__ = "favorite"
 
-    friend_id = sq.Column(sq.Integer, primary_key=True)
-    friend_vk_id = sq.Column(sq.Double, nullable=True)
-    friend_vk_link = sq.Column(sq.String, nullable=True)
+    user_id = sq.Column(sq.Bigint, sq.ForeignKey("user_id"), nullable=True)
+    favorite_vk_user_id = sq.Column(sq.Bigint, nullable=True)
 
-class User_friend(Base):
-    __tablename__ = "user_friend"
+    favorite = relationship(User, backref="user")
 
-    user_friend_id = sq.Column(sq.Integer, primary_key=True)
-    user_id = sq.Column(sq.Integer, sq.ForeignKey("user_id"), nullable=True)
-    friend_id = sq.Column(sq.Integer, sq.ForeignKey("friend_id"), nullable=True)
-    user_friend = sq.Column(sq.Boolean)
+class Blacklist(Base):
+    __tablename__ = "blacklist"
+
+    user_id = sq.Column(sq.Bigint, sq.ForeignKey("user_id"), nullable=True)
+    blocked_vk_user_id = sq.Column(sq.Integer)
 
     user = relationship(User, backref="user")
-    friend = relationship(User, backref="friend")
+    
+class State(Base):
+    __tablename__ = "state"
+
+    user_id = sq.Column(sq.Bigint, sq.ForeignKey("user_id"), nullable=True)
+    state = sq.Column(sq.Integer)
+
+    user = relationship(User, backref="user")
