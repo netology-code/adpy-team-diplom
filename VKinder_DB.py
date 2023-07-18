@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy
 import json
-from VKinder.VKinder_DB import models as m
+from VKinder_DB import models as m
 
 
 with open(r'C:\Users\Николаус\PycharmProjects\pythonProject\VKinder\VKinder_DB\config_db.json', 'r') as user_file:
