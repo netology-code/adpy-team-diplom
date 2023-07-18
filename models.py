@@ -85,7 +85,6 @@ class Photo(Base):
     photo_id = sq.Column(sq.Integer, primary_key=True)
     offer_id = sq.Column(sq.Integer, sq.ForeignKey('offer.offer_id'), nullable=False)
     photo_url = sq.Column(sq.String(length=100), nullable=False)
-    count_likes = sq.Column(sq.Integer, nullable=False)
 
     photo = relationship('Offer', back_populates='photo', cascade='all, delete')
 
