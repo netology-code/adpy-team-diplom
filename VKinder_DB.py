@@ -95,7 +95,6 @@ def add_photo(vk_offer_id, photo_url):
         Функция сохраняет в БД ссылки на фотографии предложения
     :param vk_offer_id: id предложения
     :param photo_url: лист со ссылками на фотографии
-    :param count_likes: лис с количеством лайков на фотографиях
     """
     with Session() as session:
         for url in photo_url:
