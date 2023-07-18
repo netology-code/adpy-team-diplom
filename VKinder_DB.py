@@ -90,7 +90,7 @@ def add_favorite(vk_user_id, vk_offer_id):
         session.commit()
 
 
-def add_photo(vk_offer_id, photo_url, count_likes):
+def add_photo(vk_offer_id, photo_url):
     """
         Функция сохраняет в БД ссылки на фотографии предложения
     :param vk_offer_id: id предложения
@@ -99,7 +99,7 @@ def add_photo(vk_offer_id, photo_url, count_likes):
     """
     with Session() as session:
         for url in photo_url:
-            photo = m.Photo(vk_offer_id=vk_offer_id, photo_url=url, count_likes=count_likes)
+            photo = m.Photo(vk_offer_id=vk_offer_id, photo_url=url)
             session.add(photo)
         session.commit()
 
