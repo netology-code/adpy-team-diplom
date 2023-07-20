@@ -1,4 +1,5 @@
 import sqlalchemy as sq
+import psycopg2
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -91,10 +92,10 @@ class Photo(Base):
     def __str__(self):
         return f'{self.offer_id, self.photo_url}'
 
-
+DSN = "postgresql://postgres:1507@localhost:5432/netology_db"
+engine = sq.create_engine(DSN)
 def create_table(engine):
     Base.metadata.create_all(engine)
-
 
 def delete_table(engine):
     Base.metadata.delete_all(engine)

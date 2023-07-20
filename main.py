@@ -3,7 +3,9 @@ from datetime import date
 import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
+from VKinder_DB import *
 import re
+
 
 with open('ApiKey.txt', 'r') as file_object:
     token = file_object.read().strip()
@@ -68,26 +70,29 @@ def get_search(name_city, age, gender, offset=0):
         age = today.year - int(re.sub(pattern_age, r'\3', birthday)) - ((today.month, today.day) < (
         int(re.sub(pattern_age, r'\2', birthday)), int(re.sub(pattern_age, r'\1', birthday))))
         gender = ('-', 'Ж', 'М')[user_info['sex']]
+        id_offer = str(user_info['id'])
         profile_info = {
+            'id_offer': id_offer,
             'first_name': user_info['first_name'],
             'last_name': user_info['last_name'],
             'photo_link': user_info['photo_max_orig'],
             'city': user_info['city'],
             'gender': gender,
             'agе': age,
-            'url_profile': 'https://vk.com/id' + str(user_info['id'])
+            'url_profile': 'https://vk.com/id' + id_offer
         }
         profiles_list.append(profile_info)
     return profiles_list
 
 
 for event in longpoll.listen():
+    info_user = get_info(event.user_id)
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
             request = event.text
-            info_user = get_info(event.user_id)
+            # add_user(event.user_id, info_user['first_name'], info_user['gender'], info_user['age'], info_user['city']['title'])
             if request == "привет":
-                write_msg(event.user_id, f"Хай, {info_user['last_name']} {info_user['first_name']}, проживающий в городе {info_user['city']['title']}")
+                write_msg(event.user_id, f"Хай, {info_user['last_name']} {info_user['first_name']}, проживающий  в городе {info_user['city']['title']}")
                 write_msg(event.user_id, f"Тебе {info_user['age']} лет")
                 write_msg(event.user_id, f"Подыскать тебе пару?", keyboard.get_keyboard())
                 gender_search = ('М', 'Ж').index(info_user['gender']) + 1
@@ -102,6 +107,7 @@ for event in longpoll.listen():
                                 for profile in result_list:
                                     if stoped:
                                         break
+                                    # add_offer(event.user_id, profile['id_offer'], profile['first_name'], profile['last_name'], profile['gender'], profile['agе'], profile['city']['title'])
                                     write_msg(event.user_id, f"{profile['first_name']} {profile['last_name']} {profile['agе']} лет.\n"
                                                              f"Фото: {profile['photo_link']}\n"
                                                              f"Ссылка профиля: {profile['url_profile']}")
@@ -116,9 +122,11 @@ for event in longpoll.listen():
                                                     stoped = True
                                                     break
                                                 elif request == "В избранное!":
+                                                    add_favorite(event.user_id, profile['id_offer'])
                                                     write_msg(event.user_id, f"Я добавил {profile['first_name']} в ваш список избранного!")
                                                     break
                                                 elif request == "В черный список!":
+                                                    add_black_list(event.user_id, profile['id_offer'])
                                                     write_msg(event.user_id, f"Я больше не буду показывать вам профиль {profile['first_name']} !")
                                                     break
                                 write_msg(event.user_id, "У меня на этом все!", keyboard_restart.get_keyboard())

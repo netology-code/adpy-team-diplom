@@ -1,19 +1,11 @@
 from sqlalchemy.orm import sessionmaker
-import sqlalchemy
+import sqlalchemy as sq
 import json
-from VKinder_DB import models as m
+import models as m
 
-
-with open(r'C:\Users\Николаус\PycharmProjects\pythonProject\VKinder\VKinder_DB\config_db.json', 'r') as user_file:
-    db_type, login, password, hostname, db_port, db_name = json.load(user_file).values()
-
-DSN = f'{db_type}://{login}:{password}@{hostname}:{db_port}/{db_name}'
-engine = sqlalchemy.create_engine(DSN)
-m.create_table(engine)
-
+DSN = "postgresql://postgres:1507@localhost:5432/netology_db"
+engine = sq.create_engine(DSN)
 Session = sessionmaker(bind=engine)
-
-
 def add_user(user_id, first_name, sex, age, city):
     """
         Функция добавляет пользователя в базу данных. В данном случае user - это пользователь, который ищет пару.
@@ -32,8 +24,6 @@ def add_user(user_id, first_name, sex, age, city):
         session.commit()
 
 
-add_user(1, '1', '1', 1, '1')
-
 
 def add_offer(user_id, offer_id, first_name, last_name, sex, age, city):
     """
@@ -43,7 +33,7 @@ def add_offer(user_id, offer_id, first_name, last_name, sex, age, city):
     1 - женский, 2 - мужской :param age: возраст предложения :param city: город предложения
     """
     with Session() as session:
-        offer_find = session.query(m.Offer.vk_offer_id).all()
+        offer_find = session.query(m.Offer.offer_id).all()
         if offer_id not in [offer[0] for offer in offer_find]:
             offer = m.Offer(vk_offer_id=offer_id, first_name=first_name, last_name=last_name,
                             sex=sex, age=age, city=city)
