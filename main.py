@@ -90,7 +90,7 @@ for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
             request = event.text
-            # add_user(event.user_id, info_user['first_name'], info_user['gender'], info_user['age'], info_user['city']['title'])
+            add_user(event.user_id, info_user['first_name'], info_user['gender'], info_user['age'], info_user['city']['title'])
             if request == "привет":
                 write_msg(event.user_id, f"Хай, {info_user['last_name']} {info_user['first_name']}, проживающий  в городе {info_user['city']['title']}")
                 write_msg(event.user_id, f"Тебе {info_user['age']} лет")
@@ -107,7 +107,7 @@ for event in longpoll.listen():
                                 for profile in result_list:
                                     if stoped:
                                         break
-                                    # add_offer(event.user_id, profile['id_offer'], profile['first_name'], profile['last_name'], profile['gender'], profile['agе'], profile['city']['title'])
+                                    add_offer(event.user_id, profile['id_offer'], profile['first_name'], profile['last_name'], profile['gender'], profile['agе'], profile['city']['title'])
                                     write_msg(event.user_id, f"{profile['first_name']} {profile['last_name']} {profile['agе']} лет.\n"
                                                              f"Фото: {profile['photo_link']}\n"
                                                              f"Ссылка профиля: {profile['url_profile']}")

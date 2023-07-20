@@ -35,12 +35,12 @@ def add_offer(user_id, offer_id, first_name, last_name, sex, age, city):
     with Session() as session:
         offer_find = session.query(m.Offer.offer_id).all()
         if offer_id not in [offer[0] for offer in offer_find]:
-            offer = m.Offer(vk_offer_id=offer_id, first_name=first_name, last_name=last_name,
+            offer = m.Offer(offer_id=offer_id, first_name=first_name, last_name=last_name,
                             sex=sex, age=age, city=city)
             session.add(offer)
         user_offer_find = session.query(m.UserOffer.user_offer_id).\
             filter(user_id == m.UserOffer.user_id).\
-            filter(m.UserOffer.vk_offer_id == offer_id).all()
+            filter(m.UserOffer.offer_id == offer_id).all()
         if len(user_offer_find) == 0:
             user_offer = m.UserOffer(user_id=user_id, offer_id=offer_id, black_list=0, favorite_list=0)
             session.add(user_offer)
@@ -57,8 +57,8 @@ def add_black_list(vk_user_id, vk_offer_id):
     """
     with Session() as session:
         session.query(m.UserOffer).\
-            filter(m.UserOffer.vk_offer_id == vk_offer_id).\
-            filter(m.UserOffer.vk_user_id == vk_user_id).\
+            filter(m.UserOffer.offer_id == vk_offer_id).\
+            filter(m.UserOffer.user_id == vk_user_id).\
             filter(m.UserOffer.black_list == 0).\
             update({'black_list': 1})
         session.commit()
@@ -73,8 +73,8 @@ def add_favorite(vk_user_id, vk_offer_id):
     """
     with Session() as session:
         session.query(m.UserOffer).\
-            filter(m.UserOffer.vk_offer_id == vk_offer_id).\
-            filter(m.UserOffer.vk_user_id == vk_user_id).\
+            filter(m.UserOffer.offer_id == vk_offer_id).\
+            filter(m.UserOffer.user_id == vk_user_id).\
             filter(m.UserOffer.black_list == 0).\
             update({'favorite_list': 1})
         session.commit()
@@ -108,15 +108,15 @@ def add_interest(interest, vk_user_id=0, vk_offer_id=0):
         interest_id_find = session.query(m.Interest.interest_id).filter(m.Interest.interest == interest).all()[0][0]
         user_find = session.query(m.InterestPerson.vk_user_id).\
             filter(m.InterestPerson.interest_id == interest_id_find).\
-            filter(m.InterestPerson.vk_user_id == vk_user_id).all()
+            filter(m.InterestPerson.user_id == vk_user_id).all()
         offer_find = session.query(m.InterestPerson.vk_offer_id).\
             filter(m.InterestPerson.interest_id == interest_id_find).\
-            filter(m.InterestPerson.vk_offer_id == vk_offer_id).all()
+            filter(m.InterestPerson.offer_id == vk_offer_id).all()
         if vk_user_id != 0 and vk_user_id not in [user[0] for user in user_find]:
-            interest_person_add = m.InterestPerson(vk_user_id=vk_user_id, interest_id=interest_id_find)
+            interest_person_add = m.InterestPerson(user_id=vk_user_id, interest_id=interest_id_find)
             session.add(interest_person_add)
         if vk_offer_id != 0 and vk_offer_id not in [offer[0] for offer in offer_find]:
-            interest_person_add = m.InterestPerson(vk_offer_id=vk_offer_id, interest_id=interest_id_find)
+            interest_person_add = m.InterestPerson(offer_id=vk_offer_id, interest_id=interest_id_find)
             session.add(interest_person_add)
         session.commit()
 
