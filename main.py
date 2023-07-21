@@ -3,7 +3,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkEventType, VkLongPoll
 import VKinder_Api
 from VKinder_DB import *
-from VKinder_Api import get_photo, get_info, get_search, write_msg
+from VKinder_Api import get_photo, get_info, get_search, write_msg, get_user_token
 
 keyboard = VkKeyboard(one_time=True)
 keyboard.add_button('Давай!', color=VkKeyboardColor.POSITIVE)
@@ -25,6 +25,7 @@ longpoll = VkLongPoll(vk)
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         info_user = get_info(event.user_id)
+        token = get_user_token()
         if event.to_me:
             request = event.text
             add_user(event.user_id, info_user['first_name'], info_user['gender'], info_user['age'], info_user['city']['title'])

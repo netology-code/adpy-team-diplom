@@ -17,7 +17,8 @@ longpoll = VkLongPoll(vk)
 
 
 def get_user_token():
-    pass
+    token_vk = vk.code_auth( '6287487','https://oauth.vk.com/blank.html')
+    return token_vk
 
 
 def get_photo(user_id):
