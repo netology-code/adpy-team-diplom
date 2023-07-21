@@ -1,18 +1,9 @@
-from random import randrange
-from datetime import date
 import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import VkLongPoll, VkEventType
+from vk_api.longpoll import VkEventType, VkLongPoll
+import VKinder_Api
 from VKinder_DB import *
-import re
-
-
-with open('ApiKey.txt', 'r') as file_object:
-    token = file_object.read().strip()
-
-vk = vk_api.VkApi(token=token)
-session_api = vk.get_api()
-longpoll = VkLongPoll(vk)
+from VKinder_Api import get_photo, get_info, get_search, write_msg
 
 keyboard = VkKeyboard(one_time=True)
 keyboard.add_button('Давай!', color=VkKeyboardColor.POSITIVE)
@@ -28,62 +19,8 @@ keyboard_continue.add_button('В избранное!', color=VkKeyboardColor.PRI
 keyboard_continue.add_button('В черный список!', color=VkKeyboardColor.SECONDARY)
 keyboard_continue.add_button('Остановись!', color=VkKeyboardColor.NEGATIVE)
 
-
-def write_msg(user_id, message, keyboard=None):
-    vk.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': randrange(10 ** 7), 'keyboard': keyboard})
-
-def get_info(user_id):
-    user_info = session_api.users.get(user_ids=(user_id), fields=('city', 'sex', 'bdate'))
-    user_info = user_info[0]
-    birthday = user_info['bdate']
-    pattern_age = r'(\d+)\.(\d+)\.(\d{4})'
-    if re.match(pattern_age, birthday):
-        today = date.today()
-        age = today.year - int(re.sub(pattern_age, r'\3', birthday)) - ((today.month, today.day) < (int(re.sub(pattern_age, r'\2', birthday)), int(re.sub(pattern_age, r'\1', birthday))))
-    else:
-        age = 'Одному богу известно сколько'
-    gender = ('-', 'Ж', 'М')[user_info['sex']]
-
-    user_info = {
-        'first_name': user_info['first_name'],
-        'last_name': user_info['last_name'],
-        'city': user_info['city'],
-        'gender': gender,
-        'age': age
-    }
-
-    return user_info
-
-def get_search(name_city, age, gender, offset=0):
-    with open('TokenUser.txt', 'r') as file_object:
-        token_user = file_object.read().strip()
-    vk = vk_api.VkApi(token=token_user)
-    session_api = vk.get_api()
-    users_info = session_api.users.search(hometown=name_city, sex=gender, status=6, age_from=age - 3, age_to=age + 3, count=5, offset=offset, fields=('photo_max_orig', 'bdate', 'city', 'sex'))
-    profiles_list = []
-    for user_info in users_info['items']:
-        if user_info["is_closed"]:
-            continue
-        birthday = user_info['bdate']
-        pattern_age = r'(\d+)\.(\d+)\.(\d{4})'
-        today = date.today()
-        age = today.year - int(re.sub(pattern_age, r'\3', birthday)) - ((today.month, today.day) < (
-        int(re.sub(pattern_age, r'\2', birthday)), int(re.sub(pattern_age, r'\1', birthday))))
-        gender = ('-', 'Ж', 'М')[user_info['sex']]
-        id_offer = str(user_info['id'])
-        profile_info = {
-            'id_offer': id_offer,
-            'first_name': user_info['first_name'],
-            'last_name': user_info['last_name'],
-            'photo_link': user_info['photo_max_orig'],
-            'city': user_info['city'],
-            'gender': gender,
-            'agе': age,
-            'url_profile': 'https://vk.com/id' + id_offer
-        }
-        profiles_list.append(profile_info)
-    return profiles_list
-
+vk = vk_api.VkApi(token=VKinder_Api.token)
+longpoll = VkLongPoll(vk)
 
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
