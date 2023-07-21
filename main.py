@@ -86,8 +86,8 @@ def get_search(name_city, age, gender, offset=0):
 
 
 for event in longpoll.listen():
-    info_user = get_info(event.user_id)
     if event.type == VkEventType.MESSAGE_NEW:
+        info_user = get_info(event.user_id)
         if event.to_me:
             request = event.text
             add_user(event.user_id, info_user['first_name'], info_user['gender'], info_user['age'], info_user['city']['title'])
@@ -107,7 +107,7 @@ for event in longpoll.listen():
                                 for profile in result_list:
                                     if stoped:
                                         break
-                                    add_offer(event.user_id, profile['id_offer'], profile['first_name'], profile['last_name'], profile['gender'], profile['agе'], profile['city']['title'])
+                                    add_offer(event.user_id, int(profile['id_offer']), profile['first_name'], profile['last_name'], profile['gender'], profile['agе'], profile['city']['title'])
                                     write_msg(event.user_id, f"{profile['first_name']} {profile['last_name']} {profile['agе']} лет.\n"
                                                              f"Фото: {profile['photo_link']}\n"
                                                              f"Ссылка профиля: {profile['url_profile']}")
@@ -122,11 +122,11 @@ for event in longpoll.listen():
                                                     stoped = True
                                                     break
                                                 elif request == "В избранное!":
-                                                    add_favorite(event.user_id, profile['id_offer'])
+                                                    add_favorite(event.user_id, int(profile['id_offer']))
                                                     write_msg(event.user_id, f"Я добавил {profile['first_name']} в ваш список избранного!")
                                                     break
                                                 elif request == "В черный список!":
-                                                    add_black_list(event.user_id, profile['id_offer'])
+                                                    add_black_list(event.user_id, int(profile['id_offer']))
                                                     write_msg(event.user_id, f"Я больше не буду показывать вам профиль {profile['first_name']} !")
                                                     break
                                 write_msg(event.user_id, "У меня на этом все!", keyboard_restart.get_keyboard())
@@ -140,6 +140,8 @@ for event in longpoll.listen():
                 for profile in result_list:
                     if stoped:
                         break
+                    add_offer(event.user_id, int(profile['id_offer']), profile['first_name'], profile['last_name'],
+                              profile['gender'], profile['agе'], profile['city']['title'])
                     write_msg(event.user_id, f"{profile['first_name']} {profile['last_name']} {profile['agе']} лет.\n"
                                              f"Фото: {profile['photo_link']}\n"
                                              f"Ссылка профиля: {profile['url_profile']}")
@@ -154,10 +156,12 @@ for event in longpoll.listen():
                                     stoped = True
                                     break
                                 elif request == "В избранное!":
+                                    add_favorite(event.user_id, int(profile['id_offer']))
                                     write_msg(event.user_id,
                                               f"Я добавил {profile['first_name']} в ваш список избранного!")
                                     break
                                 elif request == "В черный список!":
+                                    add_black_list(event.user_id, int(profile['id_offer']))
                                     write_msg(event.user_id,
                                               f"Я больше не буду показывать вам профиль {profile['first_name']} !")
                                     break
