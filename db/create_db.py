@@ -1,5 +1,7 @@
 from sqlalchemy import Integer, String, ForeignKey, Column
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.dialects.postgresql import ARRAY
 
 Base = declarative_base()
 
@@ -8,39 +10,44 @@ class Users(Base):
     __tablename__ = 'users'
     user_id = Column(Integer, primary_key=True, index=True)
     vk_id = Column(Integer, nullable=False, index=True)
+    age = Column(Integer)
+    city = Column(String)
+    gender = Column(Integer)
 
 
-class Applicant(Base):
-    __tablename__ = 'applicants'
-    applicant_id = Column(Integer, primary_key=True, index=True)
+class Partner(Base):
+    __tablename__ = 'partners'
+    partner_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False, index=True)
-    applicant_vk_id = Column(Integer, nullable=False)
+    partner_vk_id = Column(Integer, nullable=False)
     name = Column(String(20))
     surname = Column(String(40))
-    gender = Column(String(10))
+    gender = Column(Integer)
     age = Column(Integer)
-    foto = Column(String)
+    foto = Column(MutableList.as_mutable(ARRAY(String(100))))
     link = Column(String)
-    users = relationship('User', backref='user_id')
+
+    users_partner = relationship('Users', backref='user_id_part')
 
 
 class Favorite(Base):
     __tablename__ = 'favorites'
     favorite_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    applicant_id = Column(Integer, ForeignKey('applicants.applicant_id'), nullable=False)
+    partner_id = Column(Integer, ForeignKey('partners.partner_id'), nullable=False)
 
-    users = relationship('User', backref='user_id')
-    applicant = relationship('Applicant', backref='applicant_id')
+    users_favorite = relationship('Users', backref='user_id_favor')
+    partner_favor = relationship('Partner', backref='partner_id_acc')
 
 
 class Blacklist(Base):
     __tablename__ = 'blacklist'
-    id = Column(Integer, primary_key=True)
+    blacklist_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    applicant_id = Column(Integer, ForeignKey('applicants.applicant_id'), nullable=False)
-    users = relationship('User', backref='user_id')
-    applicant = relationship('Applicant', backref='applicant_id')
+    partner_id: int = Column(Integer, ForeignKey('partners.partner_id'), nullable=False)
+
+    users_blacklist = relationship('Users', backref='user_id_black')
+    partner_blacklist = relationship('Partner', backref='partner_id_black')
 
 
 def create_tables(engine):
