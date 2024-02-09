@@ -5,7 +5,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor, VkKeyboardButton
 
 
-personal_token = 'vk1.a.RQ0L9ImzVUBLnJ0jvDsnMgW1EjZlyBGHghvBXiBKpXtkYctv4X_UJBTnvasVrDGrsl1lPQrIAP-budDn4RsPYS2XhvrHwp8pgtoDmCxIizRHVuaXeEf-UoImbAwBr3mlMl_z5JkjPdvruCUyFO51GK8dU2KPvUKA0CQ16cppnhvA3Lvo7nJ_rX0V12cJ8j224LOiUJT1NoMmoha7ommtWA'
+personal_token = 'ваш токен'
 
 def filter_friends(partners_list):
     if not partners_list['is_friend'] and not partners_list['is_closed']:
@@ -14,7 +14,7 @@ def filter_friends(partners_list):
         return False
 
 personal_vk = vk_api.VkApi(token=personal_token)
-token = 'vk1.a.tJsBcxT5vZEq8eIh-VMmuhJDeWdEoUm5Ziz8Mg524f-0CSIW7Bi4xXkHQLUeBdhXuv6n8A19umgV3onwGodtHrxnGt6mrvhjQQOPWPUSBrbbC0mgL9IKPmYJHsD1CS8B_7NRW9d5qabSxG3AAsHEbdj7iRGFFrXEDEQE1gocE2YYj9iLbby8RFI3-Nwflocrd9llPrW1k6EvLW774A-FpA'
+token = 'ваш токен'
 # token = input('Token: ')
 vk = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk)
