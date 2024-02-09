@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     url_database = os.getenv('URL_DATABASE')
 
-    DSN = f'postgresql://{LOGIN}:{PSW}@{HOST}:{PORT}/{NAME_BD}'
+    DSN = f'postgresql://postgres:201224@localhost:5432/vkinder'
 
 # URL такого вида postgresql://postgres:postgres@localhost:5432/Vkinder"
 # Добавьте в файл .env необходимые конфигурации
