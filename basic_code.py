@@ -3,10 +3,18 @@ from random import randrange
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor, VkKeyboardButton
+from sqlalchemy import create_engine
+from db.orm import ORMvk
+from db.create_db import create_tables
 
+DSN = f'postgresql://postgres:201224@localhost:5432/vkinder'
 
-personal_token = 'ваш токен'
+engine = create_engine(DSN)
 
+create_tables(engine)
+
+personal_token = 'vk1.a.N7DJW9j7Q9TLUBuzGdFHNKrEaHc1S3VUSeRdC9a-v11Cltud98VuO3gLoBhMTr0QGUNYWHiKqViavFSRmS_bkRXYNoCXDXfB6eDJZuMyhwa5-QpzjTswaPmCzLgQDCn5M-BMO3LOT_PtMGOs2xQzy0IxMUHjdVds9dBDT2fNUdt-5CIaSIlUHGDcThD-lhjR'
+myORM = ORMvk(engine)
 def filter_friends(partners_list):
     if not partners_list['is_friend'] and not partners_list['is_closed']:
         return True
@@ -14,7 +22,7 @@ def filter_friends(partners_list):
         return False
 
 personal_vk = vk_api.VkApi(token=personal_token)
-token = 'ваш токен'
+token = 'vk1.a.tJsBcxT5vZEq8eIh-VMmuhJDeWdEoUm5Ziz8Mg524f-0CSIW7Bi4xXkHQLUeBdhXuv6n8A19umgV3onwGodtHrxnGt6mrvhjQQOPWPUSBrbbC0mgL9IKPmYJHsD1CS8B_7NRW9d5qabSxG3AAsHEbdj7iRGFFrXEDEQE1gocE2YYj9iLbby8RFI3-Nwflocrd9llPrW1k6EvLW774A-FpA'
 # token = input('Token: ')
 vk = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk)
@@ -30,6 +38,7 @@ class VkBot:
         self.vk = vk_api.VkApi(token=vk_token)
         self.testers = []
         self.personal_vk = personal_vk_token
+        self.current_state = 0
         self.hometown = ''
         self.partner_age = 0
 
@@ -61,16 +70,16 @@ class VkBot:
 
     def first_state(self):
         request = event.text
-        if request.lower() == "начать":
+        if request == "начать":
             send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())
-        elif request.lower() == "привет":
+        elif request == "привет":
             self.write_msg(event.user_id, f"Хай, {event.user_id}")
-        elif request.lower() == "пока":
+        elif request == "пока":
             self.write_msg(event.user_id, "Пока((")
         elif request.lower() == "подобрать":
             send_keyboard(event.user_id, 'Введите город для поиска', first_keyboard.get_empty_keyboard())
             # self.write_msg(event.user_id,'Введите город для поиска')
-            id_and_state[str(event.user_id)]+= 1
+            self.current_state += 1
             # self.next_partner()
         else:
             self.write_msg(event.user_id, "Не поняла вашего ответа...")
@@ -80,23 +89,21 @@ class VkBot:
         self.hometown = request
         print(self.hometown)
         self.write_msg(event.user_id, 'Введите возраст партнера')
-        id_and_state[str(event.user_id)]+= 1
+        self.current_state += 1
 
     def third_state(self):
         request = event.text
         self.partner_age = int(request)
         print(self.partner_age)
         send_keyboard(event.user_id, 'Всё готово, можно начинать', active_keyboard.get_keyboard())
-        id_and_state[str(event.user_id)] += 1
-
+        self.current_state += 1
 
     def active_state(self):
         request = event.text
         if request.lower() == 'следующий':
             self.next_partner()
-        elif request.lower() == 'выйти':
-            id_and_state[str(event.user_id)] = 0
-            send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())
+        elif request.lower() == 'назад':
+            self.current_state = 0
 
 
 vkbot = VkBot(personal_vk,token)
@@ -107,12 +114,18 @@ def send_keyboard(user_id, message, keyboard):
 
 first_keyboard.add_button('Подобрать', VkKeyboardColor.PRIMARY)
 first_keyboard.add_button('Автоподбор', VkKeyboardColor.PRIMARY)
+#vkkeyboard.add_button('Следующий', VkKeyboardColor.PRIMARY)
 first_keyboard.add_line()
+#vkkeyboard.add_button('В избранное', VkKeyboardColor.PRIMARY)
 first_keyboard.add_button('Показать избранное', VkKeyboardColor.PRIMARY)
+#vkkeyboard.add_button('Заблокировать', VkKeyboardColor.PRIMARY)
+#vkkeyboard.add_line()
 first_keyboard.add_button('Показать заблокированных', VkKeyboardColor.PRIMARY)
+#vkkeyboard.add_button('Лайк', VkKeyboardColor.PRIMARY)
+#vkkeyboard.add_button('Дизлайк', VkKeyboardColor.PRIMARY)
 
 active_keyboard.add_button('Следующий', VkKeyboardColor.PRIMARY)
-active_keyboard.add_button('Выйти', VkKeyboardColor.PRIMARY)
+active_keyboard.add_button('Назад', VkKeyboardColor.PRIMARY)
 active_keyboard.add_line()
 active_keyboard.add_button('В избранное', VkKeyboardColor.PRIMARY)
 active_keyboard.add_button('Заблокировать', VkKeyboardColor.PRIMARY)
@@ -120,16 +133,13 @@ active_keyboard.add_line()
 active_keyboard.add_button('Лайк', VkKeyboardColor.PRIMARY)
 active_keyboard.add_button('Дизлайк', VkKeyboardColor.PRIMARY)
 
-id_and_state={
-    '282135965': 0,
-    '11617682' : 0,
-    '512577409': 0
-}
+
 
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
-            match id_and_state[str(event.user_id)]:
+            myORM.add_user(vk_id=event.user_id,data={'age': 23, 'city': 'Москва', 'gender': 1})
+            match vkbot.current_state:
                 case 0:
                     vkbot.first_state()
                 case 1:
