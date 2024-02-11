@@ -14,6 +14,7 @@ class Users(Base):
     city: str = Column(String)
     gender: int = Column(Integer)
     state: int = Column(Integer)
+    offset: int = Column(Integer)
     last_id: int = Column(Integer, index=True)
 
 
