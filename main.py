@@ -15,23 +15,23 @@ from datetime import date
 from vkinder.vk_bot import VkBot
 
 if __name__ == '__main__':
-    load_dotenv(find_dotenv())
+    load_dotenv(find_dotenv(),encoding='latin-1')
 
     LOGIN = os.environ.get('LOGIN')
     PSW = os.environ.get('PSW')
     HOST = os.environ.get('HOST')
     PORT = os.environ.get('PORT')
-    NAME_BD = os.environ.get('NAME_BD')
-    PERSONAL_TOKEN = os.environ.get('VK_CLIENTS')
+    NAMEDB = os.environ.get('NAMEDB')
+    PERSONALTOKEN = os.environ.get('VKCLIENTS')
     GROUP_TOKEN = os.environ.get('VK_TOKEN_GROUP')
 
     # url_database = os.getenv('URL_DATABASE')
 
-    DSN = f'postgresql://{LOGIN}:{PSW}@{HOST}:{PORT}/{NAME_BD}'
+    DSN = f'postgresql://{LOGIN}:{PSW}@{HOST}:{PORT}/{NAMEDB}'
 
     vk = vk_api.VkApi(token=GROUP_TOKEN)
 
-    vk_bot = VkBot(ORMvk(create_engine(DSN)), GROUP_TOKEN, PERSONAL_TOKEN)
+    vk_bot = VkBot(ORMvk(create_engine(DSN)), GROUP_TOKEN, PERSONALTOKEN)
     vk_bot.run_bot()
 
 

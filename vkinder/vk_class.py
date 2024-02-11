@@ -22,6 +22,7 @@ class VkClass:
         self.current_state = 0
         self.hometown = ''
         self.partner_age = 0
+        self.partner_info = []
 
     def partners_gen(self, partners_list):
         for person in partners_list:
@@ -48,7 +49,7 @@ class VkClass:
         all_photos.reverse()
         best_images = []
         for image in all_photos[:3]:
-            best_images.append(f"photo{self.testers[0]['id']}_{image[1]}")
+            best_images.append(f"photo{person['id']}_{image[1]}")
         return best_images
 
     def next_partner(self, event):
@@ -66,13 +67,12 @@ class VkClass:
                                   'gender': person['sex'],
                                   'age': int(str(date.today())[:4]) - int(person['bdate'][-4:]),
                                   'foto': self.get_photos(person), 'link': f'https://vk.com/id{person["id"]}'})
-        # self.send_photos(event.user_id, attachment=",".join(self.get_photos()))     брать из БД будем
-        self.write_msg(event.user_id, f'https://vk.com/id{self.testers[0]["id"]}')
-        self.testers.pop(0)
 
-    def send_photos(self, user_id, attachment):
+
+
+    def send_photos(self, user_id,message, attachment):
         self.vk_group.method('messages.send',
-                             {'user_id': user_id, 'attachment': attachment, 'random_id': randrange(10 ** 7), })
+                             {'user_id': user_id, 'message': message,'attachment': attachment, 'random_id': randrange(10 ** 7), })
 
     def write_msg(self, user_id, message):
         self.vk_group.method('messages.send',
@@ -88,9 +88,7 @@ class VkClass:
             self.write_msg(event.user_id, "Пока((")
         elif request.lower() == "подобрать":
             self.send_keyboard(event.user_id, 'Введите город для поиска', first_keyboard.get_empty_keyboard())
-            # self.write_msg(event.user_id,'Введите город для поиска')
             self.current_state += 1
-            # self.next_partner()
         else:
             self.write_msg(event.user_id, "Не поняла вашего ответа...")
 
@@ -105,13 +103,23 @@ class VkClass:
         request = event.text
         self.partner_age = int(request)
         print(self.partner_age)
+        self.next_partner(event)
         self.send_keyboard(event.user_id, 'Всё готово, можно начинать', active_keyboard.get_keyboard())
+        self.partner_info = self.orm.get_random_partner()
+        self.send_photos(event.user_id, ' '.join(self.partner_info[:3]),','.join(self.partner_info[3]))
+
         self.current_state += 1
 
     def active_state(self, event):
         request = event.text
         if request.lower() == 'следующий':
-            self.next_partner(event)
+            self.orm.clear_partner_row(self.orm.get_user_id(event.user_id))
+            self.partner_info = self.orm.get_random_partner()
+            self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
         elif request.lower() == 'назад':
             self.current_state = 0
+        elif request.lower() == 'в избранное':
+            self.orm.add_favorite(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
+        elif request.lower() == 'заблокировать':
+            self.orm.add_blacklist(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
 

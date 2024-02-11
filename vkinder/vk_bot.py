@@ -60,9 +60,16 @@ class VkBot:
         for event in longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW:
                 if event.to_me:
-                    self.orm.add_user(vk_id=event.user_id, data={'age': 23, 'city': 'Москва', 'gender': 1})
                     match vkbot.current_state:
                         case 0:
+                            user_data = vkbot.personal_vk.method(method = 'users.get',values = {'user_ids': event.user_id,'fields' : 'sex,city,bdate'})
+                            print(user_data)
+                            if len(user_data[0]['bdate']) > 8:
+                                user_age = int(str(date.today())[:4]) - int(user_data[0]['bdate'][-4:])
+                            else:
+                                user_age = 18
+                            self.orm.add_user(vk_id=event.user_id,
+                                              data={'age': user_age, 'city': user_data[0]['city']['title'], 'gender': user_data[0]['sex']})
                             vkbot.first_state(event, first_keyboard)
                         case 1:
                             vkbot.second_state(event)
