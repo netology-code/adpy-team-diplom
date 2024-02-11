@@ -134,6 +134,19 @@ class ORMvk:
 
                 return user.age, gender, user.city
 
+    def get_last_user_id(self, user_id):
+        session = self.create_session_db()
+        with session.begin():
+            user = session.query(Users).filter(Users.user_id == user_id).scalar()
+            if user is not None:
+                return user.last_id
+
+    def get_state(self, user_vk_id):
+        session = self.create_session_db()
+        with session.begin():
+            user = session.query(Users).filter(Users.user_vk_id == user_vk_id).first()
+            if user is not None:
+                return user.state
     def clear_table(self):
         session = self.create_session_db()
         try:
@@ -144,13 +157,6 @@ class ORMvk:
         session.close()
         self.engine.dispose()
 
-    def get_last_user_id(self, user_id):
-        session = self.create_session_db()
-        with session.begin():
-            user = session.query(Users).filter(Users.user_id == user_id).scalar()
-            if user is not None:
-                return user.last_id
-
     def clear_partner_row(self, user_id):
         session = self.create_session_db()
         with session.begin():
@@ -159,4 +165,3 @@ class ORMvk:
                 session.query(Partner).filter(Partner.partner_id == user.last_id).delete()
                 session.query(Users).filter(Users.user_id == user_id).update({"last_id": None})
                 session.commit()
-
