@@ -70,7 +70,7 @@ class VkBot:
                                 user_age = 18
                             self.orm.add_user(vk_id=event.user_id,
                                               data={'age': user_age, 'city': user_data[0]['city']['title'], 'gender': user_data[0]['sex']})
-                            vkbot.first_state(event, first_keyboard)
+                            vkbot.first_state(event, first_keyboard,active_keyboard)
                         case 1:
                             vkbot.second_state(event)
                         case 2:
