@@ -108,7 +108,7 @@ class ORMvk:
             subblack = exists().where(Blacklist.partner_id == Partner.partner_id)
             subfavor = exists().where(Favorite.partner_id == Partner.partner_id)
             query = session.query(Partner).filter(~subblack).filter(~subfavor)
-            random_row = query.offset(int(int(query.count()) * random.random())).scalar()
+            random_row = query.offset(int(int(query.count()) * random.random())).limit(1).scalar()
             if random_row is not None:
                 session.query(Users).filter(Users.user_id == random_row.user_id). \
                     update({"last_id": random_row.partner_id})
@@ -120,7 +120,7 @@ class ORMvk:
         with session.begin():
             partner = session.query(Partner).get(partner_id)
             if partner is not None:
-                return partner.name, partner.surname, partner.foto, partner.link
+                return partner.name, partner.surname, partner.link, partner.foto
 
     def get_search_data(self, vk_id):
         session = self.create_session_db()
