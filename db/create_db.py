@@ -13,6 +13,7 @@ class Users(Base):
     age = Column(Integer)
     city = Column(String)
     gender = Column(Integer)
+    last_id = Column(Integer, index=True)
 
 
 class Partner(Base):
@@ -33,8 +34,8 @@ class Partner(Base):
 class Favorite(Base):
     __tablename__ = 'favorites'
     favorite_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    partner_id = Column(Integer, ForeignKey('partners.partner_id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False, index=True)
+    partner_id = Column(Integer, ForeignKey('partners.partner_id'), nullable=False, index=True)
 
     users_favorite = relationship('Users', backref='user_id_favor')
     partner_favor = relationship('Partner', backref='partner_id_acc')
@@ -43,8 +44,8 @@ class Favorite(Base):
 class Blacklist(Base):
     __tablename__ = 'blacklist'
     blacklist_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    partner_id: int = Column(Integer, ForeignKey('partners.partner_id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False, index=True)
+    partner_id = Column(Integer, ForeignKey('partners.partner_id'), nullable=False, index=True)
 
     users_blacklist = relationship('Users', backref='user_id_black')
     partner_blacklist = relationship('Partner', backref='partner_id_black')

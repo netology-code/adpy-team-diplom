@@ -1,5 +1,6 @@
 import random
 
+from sqlalchemy import exists, exc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 
@@ -29,10 +30,10 @@ class ORMvk:
 
     def get_user_id(self, vk_id):
         session = self.create_session_db()
-        user = session.query(Users).filter(Users.vk_id == vk_id).first()
-        session.close()
-        self.engine.dispose()
-        return user.user_id
+        with session.begin():
+            user = session.query(Users).filter(Users.vk_id == vk_id).first()
+            if user is not None:
+                return user.user_id
 
     def add_user(self, vk_id, data):
         session = self.create_session_db()
@@ -44,7 +45,6 @@ class ORMvk:
             user = session.query(Users).filter(Users.vk_id == vk_id).first()
         for key, value in data.items():
             setattr(user, key, value)
-
         session.commit()
         session.close()
         self.engine.dispose()
@@ -66,74 +66,97 @@ class ORMvk:
         session.close()
         self.engine.dispose()
 
-    def add_blacklist(self, partner_vk_id):
+    def add_blacklist(self, partner_id):
         session = self.create_session_db()
-        partner = session.query(Partner).filter(Partner.partner_vk_id == partner_vk_id).first()
-        blocked = session.query(Blacklist).filter(Blacklist.partner_id == partner.partner_id).first()
+        with session.begin():
+            partner = session.query(Partner).filter(Partner.partner_id == partner_id).first()
+            blocked = session.query(Blacklist).filter(Blacklist.partner_id == partner_id).first()
 
-        if blocked is None:
-            new_blocked = Blacklist(user_id=partner.user_id, partner_id=partner.partner_id)
-            session.add(new_blocked)
-            session.commit()
-        session.close()
-        self.engine.dispose()
+            if blocked is None:
+                new_blocked = Blacklist(user_id=partner.user_id, partner_id=partner_id)
+                session.add(new_blocked)
+                session.commit()
 
     def get_blacklist(self, user_id):
         session = self.create_session_db()
-        blacklist = session.query(Blacklist).filter(Blacklist.user_id == user_id).all()
-        session.close()
-        self.engine.dispose()
-        return [item.partner_id for item in blacklist]
+        with session.begin():
+            blacklist = session.query(Blacklist).filter(Blacklist.user_id == user_id).all()
+            if blacklist is not None:
+                return [item.partner_id for item in blacklist]
 
-    def add_favorite(self, partner_vk_id):
+    def add_favorite(self, partner_id):
         session = self.create_session_db()
-        partner = session.query(Partner).filter(Partner.partner_vk_id == partner_vk_id).first()
-        favorite = session.query(Favorite).filter(Favorite.partner_id == partner.partner_id).first()
+        with session.begin():
+            partner = session.query(Partner).filter(Partner.partner_id == partner_id).first()
+            favorite = session.query(Favorite).filter(Favorite.partner_id == partner_id).first()
 
-        if favorite is None:
-            new_favorite = Favorite(user_id=partner.user_id, condidate_id=partner.partner_id)
-            session.add(new_favorite)
-            session.commit()
-        session.close()
-        self.engine.dispose()
+            if favorite is None:
+                new_favorite = Favorite(user_id=partner.user_id, partner_id=partner_id)
+                session.add(new_favorite)
+                session.commit()
 
     def get_favorite_list(self, user_id):
         session = self.create_session_db()
-        favorite_list = session.query(Favorite).filter(Favorite.user_id == user_id).all()
-        session.close()
-        self.engine.dispose()
-        return [item.partner_id for item in favorite_list]
+        with session.begin():
+            favorite_list = session.query(Favorite).filter(Favorite.user_id == user_id).all()
+            if favorite_list is not None:
+                return [item.partner_id for item in favorite_list]
 
     def get_random_partner(self):
         session = self.create_session_db()
-        query = session.query(Partner)
-        random_row = query.offset(int(int(query.count()) * random.random())).first()
-        return random_row.name, random_row.surname, random_row.link, random_row.foto
+        with session.begin():
+            subblack = exists().where(Blacklist.partner_id == Partner.partner_id)
+            subfavor = exists().where(Favorite.partner_id == Partner.partner_id)
+            query = session.query(Partner).filter(~subblack).filter(~subfavor)
+            random_row = query.offset(int(int(query.count()) * random.random())).scalar()
+            if random_row is not None:
+                session.query(Users).filter(Users.user_id == random_row.user_id). \
+                    update({"last_id": random_row.partner_id})
+
+                return random_row.name, random_row.surname, random_row.link, random_row.foto
 
     def get_partner(self, partner_id):
         session = self.create_session_db()
-        partner = session.query(Partner).get(partner_id)
-        session.close()
-        self.engine.dispose()
-        return partner
+        with session.begin():
+            partner = session.query(Partner).get(partner_id)
+            if partner is not None:
+                return partner.name, partner.surname, partner.foto, partner.link
 
     def get_search_data(self, vk_id):
         session = self.create_session_db()
-        user = session.query(Users).filter(Users.vk_id == vk_id).first()
-        if user.gender == 2:
-            gender = 1
-        else:
-            gender = 2
-        session.close()
-        self.engine.dispose()
-        return user.age, gender, user.city
+        with session.begin():
+            user = session.query(Users).filter(Users.vk_id == vk_id).first()
+            if user is not None:
+                if user.gender == 2:
+                    gender = 1
+                else:
+                    gender = 2
+
+                return user.age, gender, user.city
 
     def clear_table(self):
         session = self.create_session_db()
         try:
             session.query(Partner).delete()
             session.commit()
-        except:
+        except exc.SQLAlchemyError:
             session.rollback()
         session.close()
         self.engine.dispose()
+
+    def get_last_user_id(self, user_id):
+        session = self.create_session_db()
+        with session.begin():
+            user = session.query(Users).filter(Users.user_id == user_id).scalar()
+            if user is not None:
+                return user.last_id
+
+    def clear_partner_row(self, user_id):
+        session = self.create_session_db()
+        with session.begin():
+            user = session.query(Users).filter(Users.user_id == user_id).first()
+            if user is not None:
+                session.query(Partner).filter(Partner.partner_id == user.last_id).delete()
+                session.query(Users).filter(Users.user_id == user_id).update({"last_id": None})
+                session.commit()
+
