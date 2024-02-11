@@ -37,16 +37,17 @@ class ORMvk:
 
     def add_user(self, vk_id, data):
         session = self.create_session_db()
-        with session.begin():
-            user = session.query(Users).filter(Users.vk_id == vk_id).first()
-            if user is None:
-                new_user = Users(vk_id=vk_id)
-                session.add(new_user)
-                session.commit()
-                user = session.query(Users).filter(Users.vk_id == vk_id).first()
-            for key, value in data.items():
-                setattr(user, key, value)
+        user = session.query(Users).filter(Users.vk_id == vk_id).first()
+        if user is None:
+            new_user = Users(vk_id=vk_id)
+            session.add(new_user)
             session.commit()
+            user = session.query(Users).filter(Users.vk_id == vk_id).first()
+        for key, value in data.items():
+            setattr(user, key, value)
+        session.commit()
+        session.close()
+        self.engine.dispose()
 
     # data - словарь содержащий информацию о партнере
     def add_partner(self, user_vk_id, partner_vk_id, data):
