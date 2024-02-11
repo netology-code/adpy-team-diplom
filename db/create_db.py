@@ -8,12 +8,13 @@ Base = declarative_base()
 
 class Users(Base):
     __tablename__ = 'users'
-    user_id = Column(Integer, primary_key=True, index=True)
-    vk_id = Column(Integer, nullable=False, index=True)
-    age = Column(Integer)
-    city = Column(String)
-    gender = Column(Integer)
-    last_id = Column(Integer, index=True)
+    user_id: int = Column(Integer, primary_key=True, index=True)
+    vk_id: int = Column(Integer, nullable=False, index=True)
+    age: int = Column(Integer)
+    city: str = Column(String)
+    gender: int = Column(Integer)
+    state: int = Column(Integer)
+    last_id: int = Column(Integer, index=True)
 
 
 class Partner(Base):
