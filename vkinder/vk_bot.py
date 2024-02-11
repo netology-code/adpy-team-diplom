@@ -76,5 +76,5 @@ class VkBot:
                         case 2:
                             vkbot.third_state(event, active_keyboard)
                         case 3:
-                            vkbot.active_state(event)
+                            vkbot.active_state(event,first_keyboard)
 

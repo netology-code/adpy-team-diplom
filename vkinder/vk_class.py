@@ -80,15 +80,21 @@ class VkClass:
 
     def first_state(self, event, first_keyboard):
         request = event.text
-        if request == "начать":
+        if request.lower() == "начать":
             self.send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())
-        elif request == "привет":
-            self.write_msg(event.user_id, f"Хай, {event.user_id}")
-        elif request == "пока":
-            self.write_msg(event.user_id, "Пока((")
+        elif request.lower() == "показать избранное":
+            for partner in self.orm.get_favorite_list(self.orm.get_user_id(event.user_id)):
+                self.partner_info = self.orm.get_partner(partner)
+                self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), self.partner_info[3][0])
+        elif request.lower() == "показать заблокированных":
+            for partner in self.orm.get_blacklist(self.orm.get_user_id(event.user_id)):
+                self.partner_info = self.orm.get_partner(partner)
+                self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), self.partner_info[3][0])
         elif request.lower() == "подобрать":
             self.send_keyboard(event.user_id, 'Введите город для поиска', first_keyboard.get_empty_keyboard())
             self.current_state += 1
+        elif request.lower() == "автоподбор":
+
         else:
             self.write_msg(event.user_id, "Не поняла вашего ответа...")
 
@@ -110,7 +116,7 @@ class VkClass:
 
         self.current_state += 1
 
-    def active_state(self, event):
+    def active_state(self, event,first_keyboard):
         request = event.text
         if request.lower() == 'следующий':
             self.orm.clear_partner_row(self.orm.get_user_id(event.user_id))
@@ -118,8 +124,13 @@ class VkClass:
             self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
         elif request.lower() == 'назад':
             self.current_state = 0
+            self.send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())
         elif request.lower() == 'в избранное':
             self.orm.add_favorite(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
+            self.partner_info = self.orm.get_random_partner()
+            self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
         elif request.lower() == 'заблокировать':
             self.orm.add_blacklist(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
+            self.partner_info = self.orm.get_random_partner()
+            self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
 
