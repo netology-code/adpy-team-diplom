@@ -155,3 +155,4 @@ class ORMvk:
             session.query(Partner).filter(Partner.partner_id == user.last_id).delete()
             session.query(Users).filter(Users.user_id == user_id).update({"last_id": None})
             session.commit()
+

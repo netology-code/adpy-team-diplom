@@ -114,3 +114,4 @@ class VkClass:
             self.next_partner(event)
         elif request.lower() == 'назад':
             self.current_state = 0
+

@@ -34,3 +34,4 @@ if __name__ == '__main__':
     vk_bot = VkBot(ORMvk(create_engine(DSN)), GROUP_TOKEN, PERSONAL_TOKEN)
     vk_bot.run_bot()
 
+
