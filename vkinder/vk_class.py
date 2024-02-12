@@ -133,15 +133,16 @@ class VkClass:
         self.current_state += 1
         self.orm.add_state(event.user_id, 3)
 
-
-    def fourth_state(self, event):
+    def fourth_state(self, event, first_keyboard):
         request = event.text
         user_age = int(request)
         user_data = self.personal_vk.method(method='users.get',
                                              values={'user_ids': event.user_id, 'fields': 'sex,city,bdate'})
+        print(user_data)
         self.orm.add_user(vk_id=event.user_id,
                           data={'age': user_age, 'city': user_data[0]['city']['title'],
                                 'gender': user_data[0]['sex']})
+        self.send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())
         self.current_state = 0
         self.orm.add_state(event.user_id, 0)
 

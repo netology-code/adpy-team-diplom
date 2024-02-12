@@ -60,27 +60,31 @@ class VkBot:
         for event in longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW:
                 if event.to_me:
-                    if self.orm.get_state(event.user_id) is None:
-                        vkbot.current_state = 0
-                    else:
+                    if self.orm.get_state(event.user_id) is not None:
                         vkbot.current_state = self.orm.get_state(event.user_id)
                     match vkbot.current_state:
                         case 0:
-                            user_data = vkbot.personal_vk.method(method = 'users.get',values = {'user_ids': event.user_id,'fields' : 'sex,city,bdate'})
-                            print(user_data)
-                            if 'bdate' in user_data[0].keys():
-                                if len(user_data[0]['bdate']) > 8:
-                                    user_age = int(str(date.today())[:4]) - int(user_data[0]['bdate'][-4:])
-                                    self.orm.add_user(vk_id=event.user_id,
-                                                      data={'age': user_age, 'city': user_data[0]['city']['title'],
-                                                            'gender': user_data[0]['sex']})
-                                    vkbot.first_state(event, first_keyboard, active_keyboard)
+                            if self.orm.get_user_id(event.user_id) is None:
+                                print('nana')
+                                user_data = vkbot.personal_vk.method(method = 'users.get',values = {'user_ids': event.user_id,'fields' : 'sex,city,bdate'})
+                                print(user_data)
+                                if 'bdate' in user_data[0].keys():
+                                    if len(user_data[0]['bdate']) > 8:
+                                        user_age = int(str(date.today())[:4]) - int(user_data[0]['bdate'][-4:])
+                                        self.orm.add_user(vk_id=event.user_id,
+                                                          data={'age': user_age, 'city': user_data[0]['city']['title'],
+                                                                'gender': user_data[0]['sex']})
+                                        vkbot.first_state(event, first_keyboard, active_keyboard)
+                                    else:
+                                        vkbot.write_msg(event.user_id,"Введите ваш возраст")
+                                        vkbot.current_state = 4
+                                        vkbot.orm.add_state(event.user_id, 4)
                                 else:
-                                    vkbot.write_msg(event.user_id,"Введите ваш возраст")
+                                    vkbot.write_msg(event.user_id, "Введите ваш возраст")
                                     vkbot.current_state = 4
+                                    vkbot.orm.add_state(event.user_id, 4)
                             else:
-                                vkbot.write_msg(event.user_id, "Введите ваш возраст")
-                                vkbot.current_state = 4
+                                vkbot.first_state(event, first_keyboard, active_keyboard)
                         case 1:
                             vkbot.second_state(event)
                         case 2:
@@ -88,6 +92,6 @@ class VkBot:
                         case 3:
                             vkbot.active_state(event,first_keyboard)
                         case 4:
-                            vkbot.fourth_state(event)
+                            vkbot.fourth_state(event, first_keyboard)
 
 
