@@ -138,7 +138,6 @@ class VkClass:
         user_age = int(request)
         user_data = self.personal_vk.method(method='users.get',
                                              values={'user_ids': event.user_id, 'fields': 'sex,city,bdate'})
-        print(user_data)
         self.orm.add_user(vk_id=event.user_id,
                           data={'age': user_age, 'city': user_data[0]['city']['title'],
                                 'gender': user_data[0]['sex']})
@@ -157,7 +156,7 @@ class VkClass:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
-        elif request.lower() == 'назад':
+        elif request.lower() == 'выйти':
             self.orm.add_state(event.user_id,0)
             self.current_state = 0
             self.send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())

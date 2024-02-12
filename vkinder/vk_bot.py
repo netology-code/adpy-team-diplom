@@ -49,7 +49,7 @@ class VkBot:
         first_keyboard.add_button('Показать заблокированных', VkKeyboardColor.PRIMARY)
 
         active_keyboard.add_button('Следующий', VkKeyboardColor.PRIMARY)
-        active_keyboard.add_button('Назад', VkKeyboardColor.PRIMARY)
+        active_keyboard.add_button('Выйти', VkKeyboardColor.PRIMARY)
         active_keyboard.add_line()
         active_keyboard.add_button('В избранное', VkKeyboardColor.PRIMARY)
         active_keyboard.add_button('Заблокировать', VkKeyboardColor.PRIMARY)
@@ -65,9 +65,7 @@ class VkBot:
                     match vkbot.current_state:
                         case 0:
                             if self.orm.get_user_id(event.user_id) is None:
-                                print('nana')
                                 user_data = vkbot.personal_vk.method(method = 'users.get',values = {'user_ids': event.user_id,'fields' : 'sex,city,bdate'})
-                                print(user_data)
                                 if 'bdate' in user_data[0].keys():
                                     if len(user_data[0]['bdate']) > 8:
                                         user_age = int(str(date.today())[:4]) - int(user_data[0]['bdate'][-4:])
