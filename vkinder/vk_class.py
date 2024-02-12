@@ -134,9 +134,11 @@ class VkClass:
         self.orm.add_state(event.user_id, 3)
 
 
-    def fourth_state(self, event, user_data):
+    def fourth_state(self, event):
         request = event.text
         user_age = int(request)
+        user_data = self.personal_vk.method(method='users.get',
+                                             values={'user_ids': event.user_id, 'fields': 'sex,city,bdate'})
         self.orm.add_user(vk_id=event.user_id,
                           data={'age': user_age, 'city': user_data[0]['city']['title'],
                                 'gender': user_data[0]['sex']})

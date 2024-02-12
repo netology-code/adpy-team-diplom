@@ -60,7 +60,10 @@ class VkBot:
         for event in longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW:
                 if event.to_me:
-                    vkbot.current_state = self.orm.get_state(event.user_id)
+                    if self.orm.get_state(event.user_id) is None:
+                        vkbot.current_state = 0
+                    else:
+                        vkbot.current_state = self.orm.get_state(event.user_id)
                     match vkbot.current_state:
                         case 0:
                             user_data = vkbot.personal_vk.method(method = 'users.get',values = {'user_ids': event.user_id,'fields' : 'sex,city,bdate'})
@@ -74,15 +77,17 @@ class VkBot:
                                     vkbot.first_state(event, first_keyboard, active_keyboard)
                                 else:
                                     vkbot.write_msg(event.user_id,"Введите ваш возраст")
-                                    vkbot.fourth_state(event, user_data)
+                                    vkbot.current_state = 4
                             else:
                                 vkbot.write_msg(event.user_id, "Введите ваш возраст")
-                                vkbot.fourth_state(event, user_data)
+                                vkbot.current_state = 4
                         case 1:
                             vkbot.second_state(event)
                         case 2:
                             vkbot.third_state(event, active_keyboard)
                         case 3:
                             vkbot.active_state(event,first_keyboard)
+                        case 4:
+                            vkbot.fourth_state(event)
 
 
