@@ -61,8 +61,10 @@ class VkClass:
                                                 'age_from': self.partner_age - 2, 'age_to': self.partner_age + 2,
                                                 'fields': 'is_friend, sex, bdate'})['items']
         self.testers = list(filter(self.filter_friends, self.testers))
+
         for person in self.partners_gen(self.testers):
-            print(person)
+            if len(self.get_photos(person)) < 3:
+                continue
             self.orm.add_partner(event.user_id, person['id'],
                                  {'name': person['first_name'], 'surname': person['last_name'],
                                   'gender': person['sex'],
@@ -96,6 +98,7 @@ class VkClass:
         elif request.lower() == "подобрать":
             self.send_keyboard(event.user_id, 'Введите город для поиска', first_keyboard.get_empty_keyboard())
             self.current_state += 1
+            self.orm.add_state(event.user_id, 1)
         elif request.lower() == "автоподбор":
             print('auto')
             searh_data = self.orm.get_search_data(event.user_id)
@@ -107,6 +110,7 @@ class VkClass:
             self.partner_info = self.orm.get_random_partner()
             self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             self.current_state = 3
+            self.orm.add_state(event.user_id, 3)
         else:
             self.write_msg(event.user_id, "Не поняла вашего ответа...")
 
@@ -116,6 +120,7 @@ class VkClass:
         print(self.hometown)
         self.write_msg(event.user_id, 'Введите возраст партнера')
         self.current_state += 1
+        self.orm.add_state(event.user_id, 2)
 
     def third_state(self, event, active_keyboard):
         request = event.text
@@ -126,6 +131,17 @@ class VkClass:
         self.partner_info = self.orm.get_random_partner()
         self.send_photos(event.user_id, ' '.join(self.partner_info[:3]),','.join(self.partner_info[3]))
         self.current_state += 1
+        self.orm.add_state(event.user_id, 3)
+
+
+    def fourth_state(self, event, user_data):
+        request = event.text
+        user_age = int(request)
+        self.orm.add_user(vk_id=event.user_id,
+                          data={'age': user_age, 'city': user_data[0]['city']['title'],
+                                'gender': user_data[0]['sex']})
+        self.current_state = 0
+        self.orm.add_state(event.user_id, 0)
 
     def active_state(self, event,first_keyboard):
         request = event.text
@@ -139,6 +155,7 @@ class VkClass:
             else:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
         elif request.lower() == 'назад':
+            self.orm.add_state(event.user_id,0)
             self.current_state = 0
             self.send_keyboard(event.user_id, 'Начинаем!', first_keyboard.get_keyboard())
         elif request.lower() == 'в избранное':

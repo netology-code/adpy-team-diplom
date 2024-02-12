@@ -144,7 +144,7 @@ class ORMvk:
     def add_state(self, user_vk_id, state):
         session = self.create_session_db()
         with session.begin():
-            user = session.query(Users).filter(Users.user_vk_id == user_vk_id).first()
+            user = session.query(Users).filter(Users.vk_id == user_vk_id).first()
             if user is not None:
                 session.query(Users).filter(Users.user_id == user.user_id). \
                         update({"state": state})
@@ -152,14 +152,14 @@ class ORMvk:
     def get_state(self, user_vk_id):
         session = self.create_session_db()
         with session.begin():
-            user = session.query(Users).filter(Users.user_vk_id == user_vk_id).first()
+            user = session.query(Users).filter(Users.vk_id == user_vk_id).first()
             if user is not None:
                 return user.state
 
     def add_offset(self, user_vk_id, offset):
         session = self.create_session_db()
         with session.begin():
-            user = session.query(Users).filter(Users.user_vk_id == user_vk_id).first()
+            user = session.query(Users).filter(Users.vk_id == user_vk_id).first()
             if user is not None:
                 session.query(Users).filter(Users.user_id == user.user_id). \
                         update({"offset": offset})
@@ -167,7 +167,7 @@ class ORMvk:
     def get_offset(self, user_vk_id):
         session = self.create_session_db()
         with session.begin():
-            user = session.query(Users).filter(Users.user_vk_id == user_vk_id).first()
+            user = session.query(Users).filter(Users.vk_id == user_vk_id).first()
             if user is not None:
                 return user.offset
 
