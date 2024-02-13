@@ -57,7 +57,7 @@ class VkClass:
         if self.testers is None or not self.testers:
             self.testers = \
                 self.personal_vk.method('users.search',
-                                        values={'count': 20, 'sex': self.partner_gender, 'has_photo': 1, 'hometown': self.hometown,
+                                        values={'count': 100, 'sex': self.partner_gender, 'has_photo': 1, 'hometown': self.hometown,
                                                 'age_from': self.partner_age - 2, 'age_to': self.partner_age + 2,
                                                 'fields': 'is_friend, sex, bdate'})['items']
         self.testers = list(filter(self.filter_friends, self.testers))
@@ -126,7 +126,29 @@ class VkClass:
         request = event.text
         self.partner_age = int(request)
         print(self.partner_age)
+
+        import datetime
+
+        # фиксируем и выводим время старта работы кода
+        start = datetime.datetime.now()
+        print('Время старта: ' + str(start))
+
+        # код, время работы которого измеряем
+
+        # фиксируем и выводим время окончания работы кода
+        finish = datetime.datetime.now()
+        print('Время окончания: ' + str(finish))
+
+        # вычитаем время старта из времени окончания
+        print('Время работы: ' + str(finish - start))
+
         self.next_partner(event)
+        # фиксируем и выводим время окончания работы кода
+        finish = datetime.datetime.now()
+        print('Время окончания: ' + str(finish))
+
+        # вычитаем время старта из времени окончания
+        print('Время работы: ' + str(finish - start))
         self.send_keyboard(event.user_id, 'Всё готово, можно начинать', active_keyboard.get_keyboard())
         self.partner_info = self.orm.get_random_partner()
         self.send_photos(event.user_id, ' '.join(self.partner_info[:3]),','.join(self.partner_info[3]))

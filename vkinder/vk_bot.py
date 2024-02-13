@@ -16,6 +16,7 @@ load_dotenv(find_dotenv())
 testers = None
 
 
+
 class VkBot:
     def __init__(self, orm, group_token, personal_token):
         self.orm = orm
