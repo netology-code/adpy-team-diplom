@@ -11,6 +11,8 @@ from db.create_db import create_tables
 
 from dotenv import load_dotenv, find_dotenv
 
+from threading import Thread
+
 
 class VkClass:
     def __init__(self, vk_personal, vk_group, orm):
@@ -53,12 +55,12 @@ class VkClass:
             best_images.append(f"photo{person['id']}_{image[1]}")
         return best_images
 
-    def next_partner(self, event):
+    def next_partner(self, event,count,age):
         if self.testers is None or not self.testers:
             self.testers = \
                 self.personal_vk.method('users.search',
-                                        values={'count': 100, 'sex': self.partner_gender, 'has_photo': 1, 'hometown': self.hometown,
-                                                'age_from': self.partner_age - 2, 'age_to': self.partner_age + 2,
+                                        values={'count': count, 'sex': self.partner_gender, 'has_photo': 1, 'hometown': self.hometown,
+                                                'age_from': age, 'age_to': age,
                                                 'fields': 'is_friend, sex, bdate'})['items']
         self.testers = list(filter(self.filter_friends, self.testers))
 
@@ -141,8 +143,10 @@ class VkClass:
 
         # вычитаем время старта из времени окончания
         print('Время работы: ' + str(finish - start))
-
-        self.next_partner(event)
+        Thread(target=self.next_partner, args=(event, 1000,self.partner_age-1)).start()
+        Thread(target=self.next_partner, args=(event, 1000,self.partner_age)).start()
+        Thread(target=self.next_partner, args=(event, 1000,self.partner_age+1)).start()
+        self.next_partner(event, 25,self.partner_age)
         # фиксируем и выводим время окончания работы кода
         finish = datetime.datetime.now()
         print('Время окончания: ' + str(finish))
@@ -200,4 +204,3 @@ class VkClass:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
-
