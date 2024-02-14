@@ -24,8 +24,11 @@ class VkClass:
 
     @staticmethod
     def filter_friends(partners_list):
-        if not partners_list['is_friend'] and not partners_list['is_closed'] and len(partners_list['bdate']) > 8:
-            return True
+        if 'bdate' in partners_list.keys():
+            if not partners_list['is_friend'] and not partners_list['is_closed'] and len(partners_list['bdate']) > 8:
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -47,11 +50,11 @@ class VkClass:
             best_images.append(f"photo{person['id']}_{image[1]}")
         return best_images
 
-    def next_partner(self, event, count, age):
+    def next_partner(self, event, count, age,offset):
         if self.testers is None or not self.testers:
             self.testers = \
                 self.personal_vk.method('users.search',
-                                        values={'count': count, 'sex': self.partner_gender, 'has_photo': 1,
+                                        values={'count': count,'offset': offset, 'sex': self.partner_gender, 'has_photo': 1,
                                                 'hometown': self.hometown,
                                                 'age_from': age, 'age_to': age,
                                                 'fields': 'is_friend, sex, bdate'})['items']
@@ -103,7 +106,7 @@ class VkClass:
             self.partner_age = searh_data[0]
             self.partner_gender = searh_data[1]
             self.hometown = searh_data[2]
-            self.next_partner(event, 25, self.partner_age)
+            self.next_partner(event, 25, self.partner_age,0)
             self.send_keyboard(event.user_id, 'Пользователи найденные по вашему запросу', active_keyboard.get_keyboard())
             self.partner_info = self.orm.get_random_partner()
             self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
@@ -137,10 +140,11 @@ class VkClass:
         #
         # # вычитаем время старта из времени окончания
         # print('Время работы: ' + str(finish - start))
-        Thread(target=self.next_partner, args=(event, 1000, self.partner_age - 1)).start()
-        Thread(target=self.next_partner, args=(event, 1000, self.partner_age)).start()
-        Thread(target=self.next_partner, args=(event, 1000, self.partner_age + 1)).start()
-        self.next_partner(event, 25, self.partner_age)
+
+        Thread(target=self.next_partner, args=(event, 1000, self.partner_age - 1,25)).start()
+        Thread(target=self.next_partner, args=(event, 1000, self.partner_age,25)).start()
+        Thread(target=self.next_partner, args=(event, 1000, self.partner_age + 1,25)).start()
+        self.next_partner(event, 25, self.partner_age, 0)
         # # фиксируем и выводим время окончания работы кода
         # finish = datetime.datetime.now()
         # print('Время окончания: ' + str(finish))
@@ -171,7 +175,7 @@ class VkClass:
             self.orm.clear_partner_row(self.orm.get_user_id(event.user_id))
             self.partner_info = self.orm.get_random_partner()
             if self.partner_info is None:
-                self.next_partner(event, 25, self.partner_age)
+                self.next_partner(event, 25, self.partner_age,0)
                 self.partner_info = self.orm.get_random_partner()
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
@@ -184,7 +188,7 @@ class VkClass:
             self.orm.add_favorite(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
             self.partner_info = self.orm.get_random_partner()
             if self.partner_info is None:
-                self.next_partner(event, 25, self.partner_age)
+                self.next_partner(event, 25, self.partner_age,0)
                 self.partner_info = self.orm.get_random_partner()
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
@@ -193,8 +197,10 @@ class VkClass:
             self.orm.add_blacklist(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
             self.partner_info = self.orm.get_random_partner()
             if self.partner_info is None:
-                self.next_partner(event, 25, self.partner_age)
+                self.next_partner(event, 25, self.partner_age,0)
                 self.partner_info = self.orm.get_random_partner()
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
+        elif request.lower() == 'лайк':
+            self.personal_vk.method('likes.add',values={'type':'photo','owner_id':'178546945','item_id':'457246150'})
