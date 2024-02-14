@@ -8,27 +8,26 @@ Base = declarative_base()
 
 class Users(Base):
     __tablename__ = 'users'
-    user_id: int = Column(Integer, primary_key=True, index=True)
-    vk_id: int = Column(Integer, nullable=False, index=True)
-    age: int = Column(Integer)
-    city: str = Column(String)
-    gender: int = Column(Integer)
-    state: int = Column(Integer)
-    offset: int = Column(Integer)
-    last_id: int = Column(Integer, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
+    vk_id = Column(Integer, unique=True, nullable=False, index=True)
+    age = Column(Integer)
+    city = Column(String(150))
+    gender = Column(Integer)
+    state = Column(Integer)
+    last_id = Column(Integer, index=True)
 
 
 class Partner(Base):
     __tablename__ = 'partners'
     partner_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False, index=True)
-    partner_vk_id = Column(Integer, nullable=False)
-    name = Column(String(20))
-    surname = Column(String(40))
+    partner_vk_id = Column(Integer, unique=True, nullable=False)
+    name = Column(String(50))
+    surname = Column(String(50))
     gender = Column(Integer)
     age = Column(Integer)
     foto = Column(MutableList.as_mutable(ARRAY(String(100))))
-    link = Column(String)
+    link = Column(String(1000))
 
     users_partner = relationship('Users', backref='user_id_part')
 
