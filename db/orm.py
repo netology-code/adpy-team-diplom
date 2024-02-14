@@ -185,3 +185,11 @@ class ORMvk:
                 session.query(Partner).filter(Partner.partner_id == user.last_id).delete()
                 session.query(Users).filter(Users.user_id == user_id).update({"last_id": None})
                 session.commit()
+
+    def clear_partner_all(self, user_id):
+        subblack = exists().where(Blacklist.partner_id == Partner.partner_id)
+        subfavor = exists().where(Favorite.partner_id == Partner.partner_id)
+
+        with self.session as session:
+            session.query(Partner).filter(Partner.user_id == user_id).filter(~subblack).filter(~subfavor).delete()
+            session.commit()

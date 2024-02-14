@@ -59,7 +59,6 @@ class VkClass:
                                                 'age_from': age, 'age_to': age,
                                                 'fields': 'is_friend, sex, bdate'})['items']
         self.testers = list(filter(self.filter_friends, self.testers))
-
         for person in self.partners_gen(self.testers):
             if len(self.get_photos(person)) < 3:
                 continue
@@ -68,6 +67,7 @@ class VkClass:
                                   'gender': person['sex'],
                                   'age': int(str(date.today())[:4]) - int(person['bdate'][-4:]),
                                   'foto': self.get_photos(person), 'link': f'https://vk.com/id{person["id"]}'})
+        self.testers = []
 
     def send_photos(self, user_id, message, attachment):
         self.vk_group.method('messages.send',
@@ -96,11 +96,13 @@ class VkClass:
                 print(self.partner_info)
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), self.partner_info[3][0])
         elif request.lower() == "подобрать":
+            self.orm.clear_partner_all(self.orm.get_user_id(event.user_id))
             self.send_keyboard(event.user_id, 'В каком городе будем искать?', first_keyboard.get_empty_keyboard())
             self.current_state += 1
             self.orm.add_state(event.user_id, 1)
         elif request.lower() == "автоподбор":
             print('auto')
+            self.orm.clear_partner_all(self.orm.get_user_id(event.user_id))
             self.write_msg(event.user_id, 'Поиск будет выполнен на основе данных вашего профиля')
             searh_data = self.orm.get_search_data(event.user_id)
             self.partner_age = searh_data[0]
