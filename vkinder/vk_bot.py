@@ -29,7 +29,7 @@ class VkBot:
         return vk_api.VkApi(token=self.personal_token)
 
     def create_vkbot(self):
-        return VkClass(self.create_vk_personal(), self.create_vk_group(), self.orm)
+        return VkClass(self.create_vk_personal(), self.create_vk_group(), self.orm, self.personal_token)
 
     def run_bot(self):
         self.check_db()

@@ -16,3 +16,5 @@ SQLAlchemy-Utils==0.41.1
 typing_extensions==4.9.0
 urllib3==2.2.0
 vk-api==11.9.9
+
+aiohttp~=3.9.3

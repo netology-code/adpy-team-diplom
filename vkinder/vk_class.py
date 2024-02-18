@@ -1,12 +1,16 @@
+import json
 from random import randrange
 import datetime
 from datetime import date
+import asyncio
+from aiohttp import ClientSession
 
 from threading import Thread
 
 
 class VkClass:
-    def __init__(self, vk_personal, vk_group, orm):
+    def __init__(self, vk_personal, vk_group, orm, personal_token):
+        self.personal_token = personal_token
         self.vk_group = vk_group
         self.personal_vk = vk_personal
         self.orm = orm
@@ -50,23 +54,80 @@ class VkClass:
             best_images.append(f"photo{person['id']}_{image[1]}")
         return best_images
 
-    def next_partner(self, event, count, age,offset):
+    def build_url_values(self, ids):
+        values = {'access_token': self.personal_token,
+                  'v': '5.199',
+                  'owner_id': ids,
+                  'album_id': 'profile',
+                  'extended': '1'
+                  }
+        return values
+
+    async def async_get_photo(self, ids, session):
+        url_values = self.build_url_values(ids)
+        url = 'https://api.vk.ru/method/photos.get'
+        try:
+            async with session.get(url, params=url_values) as response:
+
+                # Считываем json
+                if response.ok:
+                    resp = await response.text()
+                    js = json.loads(resp)
+                    if 'error' not in resp:
+                        photo_list_users = [x for x in js['response']['items'] if x]
+                else:
+                    return None
+
+            all_photos = []
+            for image in photo_list_users:
+                all_photos.append([image["likes"]["count"], image["id"]])
+            all_photos.sort()
+            all_photos.reverse()
+            for image in all_photos[:3]:
+                self.photo_data.append(f"photo{ids}_{image[1]}")
+
+        except Exception as ex:
+            print(f'Error: {ex} IDS {ids} - {js}')
+
+    async def task_get_photo(self, ids, personal_token):
+        tasks = []
+        ses = ClientSession(headers={'Authorization': f'Bearer {personal_token}'})
+        async with ses as session:
+            task = asyncio.ensure_future(self.async_get_photo(ids, session))
+            await asyncio.sleep(.33)
+            tasks.append(task)
+
+            responses = asyncio.gather(*tasks)
+            await responses
+            del responses
+            await session.close()
+
+    def next_partner(self, event, count, age, offset):
         if self.testers is None or not self.testers:
             self.testers = \
                 self.personal_vk.method('users.search',
-                                        values={'count': count,'offset': offset, 'sex': self.partner_gender, 'has_photo': 1,
+                                        values={'count': count, 'offset': offset, 'sex': self.partner_gender,
+                                                'has_photo': 1,
                                                 'hometown': self.hometown,
                                                 'age_from': age, 'age_to': age,
                                                 'fields': 'is_friend, sex, bdate'})['items']
         self.testers = list(filter(self.filter_friends, self.testers))
-        for person in self.partners_gen(self.testers):
-            if len(self.get_photos(person)) < 3:
+
+        for person in self.testers:
+            # print(person['id'])
+            self.photo_data = []
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(self.task_get_photo(person['id'], self.personal_token))
+            if len(self.photo_data) < 3:
                 continue
             self.orm.add_partner(event.user_id, person['id'],
                                  {'name': person['first_name'], 'surname': person['last_name'],
                                   'gender': person['sex'],
                                   'age': int(str(date.today())[:4]) - int(person['bdate'][-4:]),
-                                  'foto': self.get_photos(person), 'link': f'https://vk.com/id{person["id"]}'})
+                                  'foto': self.photo_data, 'link': f'https://vk.com/id{person["id"]}'}
+                                 )
+
         self.testers = []
 
     def send_photos(self, user_id, message, attachment):
@@ -108,8 +169,9 @@ class VkClass:
             self.partner_age = searh_data[0]
             self.partner_gender = searh_data[1]
             self.hometown = searh_data[2]
-            self.next_partner(event, 25, self.partner_age,0)
-            self.send_keyboard(event.user_id, 'Пользователи найденные по вашему запросу', active_keyboard.get_keyboard())
+            self.next_partner(event, 25, self.partner_age, 0)
+            self.send_keyboard(event.user_id, 'Пользователи найденные по вашему запросу',
+                               active_keyboard.get_keyboard())
             self.partner_info = self.orm.get_random_partner()
             self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             self.current_state = 3
@@ -143,10 +205,14 @@ class VkClass:
         # # вычитаем время старта из времени окончания
         # print('Время работы: ' + str(finish - start))
 
-        Thread(target=self.next_partner, args=(event, 1000, self.partner_age - 1,25)).start()
-        Thread(target=self.next_partner, args=(event, 1000, self.partner_age,25)).start()
-        Thread(target=self.next_partner, args=(event, 1000, self.partner_age + 1,25)).start()
-        self.next_partner(event, 25, self.partner_age, 0)
+        # Thread(target=self.next_partner, args=(event, 1000, self.partner_age - 1, 25)).start()
+        # Thread(target=self.next_partner, args=(event, 1000, self.partner_age, 25)).start()
+        # Thread(target=self.next_partner, args=(event, 1000, self.partner_age + 1, 25)).start()
+        for age in range(self.partner_age - 1, self.partner_age + 2):
+            start = datetime.datetime.now()
+            self.next_partner(event, 1000, age, 0)
+            finish = datetime.datetime.now()
+            print('Время работы: ' + str(finish - start))
         # # фиксируем и выводим время окончания работы кода
         # finish = datetime.datetime.now()
         # print('Время окончания: ' + str(finish))
@@ -177,7 +243,7 @@ class VkClass:
             self.orm.clear_partner_row(self.orm.get_user_id(event.user_id))
             self.partner_info = self.orm.get_random_partner()
             if self.partner_info is None:
-                self.next_partner(event, 25, self.partner_age,0)
+                self.next_partner(event, 25, self.partner_age, 0)
                 self.partner_info = self.orm.get_random_partner()
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
@@ -190,7 +256,7 @@ class VkClass:
             self.orm.add_favorite(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
             self.partner_info = self.orm.get_random_partner()
             if self.partner_info is None:
-                self.next_partner(event, 25, self.partner_age,0)
+                self.next_partner(event, 25, self.partner_age, 0)
                 self.partner_info = self.orm.get_random_partner()
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
@@ -199,10 +265,11 @@ class VkClass:
             self.orm.add_blacklist(self.orm.get_last_user_id(self.orm.get_user_id(event.user_id)))
             self.partner_info = self.orm.get_random_partner()
             if self.partner_info is None:
-                self.next_partner(event, 25, self.partner_age,0)
+                self.next_partner(event, 25, self.partner_age, 0)
                 self.partner_info = self.orm.get_random_partner()
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
             else:
                 self.send_photos(event.user_id, ' '.join(self.partner_info[:3]), ','.join(self.partner_info[3]))
         elif request.lower() == 'лайк':
-            self.personal_vk.method('likes.add',values={'type':'photo','owner_id':'178546945','item_id':'457246150'})
+            self.personal_vk.method('likes.add',
+                                    values={'type': 'photo', 'owner_id': '178546945', 'item_id': '457246150'})
