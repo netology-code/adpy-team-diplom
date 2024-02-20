@@ -139,6 +139,32 @@ class VkClass:
         self.vk_group.method('messages.send',
                              {'user_id': user_id, 'message': message, 'random_id': randrange(10 ** 7), })
 
+    def check_user(self, event, first_keyboard, active_keyboard):
+        if self.orm.get_user_id(event.user_id) is None:
+            user_data = self.personal_vk.method(method='users.get',
+                                                         values={'user_ids': event.user_id,
+                                                                 'fields': 'sex,city,bdate'})
+            self.check_bdate(event, user_data, first_keyboard, active_keyboard)
+        else:
+            self.first_state(event, first_keyboard, active_keyboard)
+
+    def check_bdate(self, event, user_data, first_keyboard, active_keyboard):
+        if 'bdate' in user_data[0].keys():
+            if len(user_data[0]['bdate']) > 8:
+                user_age = int(str(date.today())[:4]) - int(user_data[0]['bdate'][-4:])
+                self.orm.add_user(vk_id=event.user_id,
+                                  data={'age': user_age, 'city': user_data[0]['city']['title'],
+                                        'gender': user_data[0]['sex']})
+                self.first_state(event, first_keyboard, active_keyboard)
+            else:
+                self.write_msg(event.user_id, "Введите ваш возраст")
+                self.current_state = 4
+                self.orm.add_state(event.user_id, 4)
+        else:
+            self.write_msg(event.user_id, "Введите ваш возраст")
+            self.current_state = 4
+            self.orm.add_state(event.user_id, 4)
+
     def first_state(self, event, first_keyboard, active_keyboard):
         request = event.text
         if request.lower() == "начать":
