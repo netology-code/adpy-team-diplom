@@ -178,7 +178,8 @@ class VkClass:
                     self.orm.update_user(vk_id=vk_user_id,
                                          data={'age': user_age})
                     self.orm.add_state(vk_user_id, BotState.search_state.value)
-
+                    self.main_state(vk_user_id)
+                    return
             if msg.isdigit() is not True:
                 self.write_msg(vk_user_id, 'Проверьте в профиле ваш возраст (должно быть целое число).',
                                keyboard=empty_keyboard)
