@@ -32,7 +32,7 @@ class ORMvk:
             return user.user_id
 
     '''Добавляет нового пользоавтеля в таблицу БД.'''
-    def add_user(self, vk_id, data):
+    def add_user(self, vk_id):
         if self.session is not None:
             q = select(Users).where(Users.vk_id == vk_id)
             new_user = Users(vk_id=vk_id)
@@ -41,10 +41,35 @@ class ORMvk:
             if user is None:
                 session.add(new_user)
                 session.commit()
+
+    def get_user(self, vk_id):
+        q = select(Users).where(Users.vk_id == vk_id)
+        with self.session as session:
+            user = session.execute(q).scalar()
+        if user is not None:
+            return user
+    # def add_user(self, vk_id, data):
+    #     if self.session is not None:
+    #         q = select(Users).where(Users.vk_id == vk_id)
+    #         new_user = Users(vk_id=vk_id)
+    #         with self.session as session:
+    #             user = session.execute(q).scalar()
+    #         if user is None:
+    #             session.add(new_user)
+    #             session.commit()
+    #             user = session.execute(q).scalar()
+    #         for key, value in data.items():
+    #             setattr(user, key, value)
+    #         session.commit()
+
+    def update_user(self, vk_id, data):
+        if self.session is not None:
+            q = select(Users).where(Users.vk_id == vk_id)
+            with self.session as session:
                 user = session.execute(q).scalar()
-            for key, value in data.items():
-                setattr(user, key, value)
-            session.commit()
+                for key, value in data.items():
+                    setattr(user, key, value)
+                session.commit()
 
     '''Добавляет партнера в таблицу БД'''
     def add_partner(self, user_vk_id, partner_vk_id, data):
