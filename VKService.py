@@ -22,32 +22,24 @@ class VKService:
 
         url = 'https://api.vk.com/method/users.get'
 
-        response = requests.get(url, params={**self.params})
+        params = {
+            'user_ids': user_id,
+            'fields': 'about,sex'
+        }
+
+        response = requests.get(url, params={**self.params, **params})
 
         if response.status_code == 200:
             return Result(True, response.json(), "")
         else:
             return Result(False, response.json(), response.json())
 
-    def get_user_first_name(self, user_id) -> str:
-        """
-        Выполняет получение имени пользователя
-        :param user_id: id пользователя
-        :return: имя пользователя
-        """
-        result = self.users_info(user_id)
-        users_list = []
-        if result.success:
-            try:
-                users_list = result.value.get('response').get('items')
-            except Exception as e:
-                print(f'Ошибка в получании данных из результата - {str(e)}')
-        else:
-            print(f'Ошибка в результате запроса - {result.error}')
-
-
-
     def users_search(self, criteria_dict) -> Result:
+
+        ss = vk_api.VkApi(token=self.token)
+        vk = ss.get_api()
+
+
         """
         Выполняет get-запрос к vk api users.search с поиском пользователей
         :param criteria_dict: словарь критерий поиска
@@ -56,35 +48,39 @@ class VKService:
 
         url = 'https://api.vk.com/method/users.search'
         #criteria_dict
-        params_loc = {
-            'sex': 1,
+        params = {
+            'sex': 111,
             'status': 1,
             'age_from': 20,
             'age_to': 25,
             'count': 10,
+            'has_photo': 1,
             'fields': 'about,sex'
         }
-        response = requests.get(url, params={**params_loc, **self.params})
+
+        try:
+            res = vk.users.search(**params)
+        except Exception as e:
+            print(e)
+        response = requests.get(url, params={**params, **self.params})
 
         if response.status_code == 200:
             return Result(True, response.json(), "")
         else:
             return Result(False, response.json(), response.json())
 
-    def get_users_list(self, criteria_dict):
-        """
-        Выполняет получение списка пользователей из vk
-        :param criteria_dict: словарь критерий поиска
-        :return: список словарей с описанием пользователей
-        """
-        result = self.users_search(criteria_dict)
-        users_list = []
-        if result.success:
-            try:
-                users_list = result.value.get('response').get('items')
-            except Exception as e:
-                print(f'Ошибка в получании данных из результата - {str(e)}')
-        else:
-            print(f'Ошибка в результате запроса - {result.error}')
+    def users_photos(self, user_id) -> Result:
+        url = 'https://api.vk.com/method/photos.get'
+        params = {'owner_id': user_id,
+                  'extended': 1,
+                  'album_id': 'profile',
+                  'photo_sizes': 1}
+        response = requests.get(url, params={**self.params, **params})
 
-        return users_list
+        if response.status_code == 200:
+            if response.json().get('error'):
+                return Result(False, response.json().get('error'), str(response.json().get('error')))
+            else:
+                return Result(True, response.json(), "")
+        else:
+            return Result(False, response.json(), response.json())
