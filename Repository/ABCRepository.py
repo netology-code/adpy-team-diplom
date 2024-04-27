@@ -2,7 +2,7 @@ from User import User
 from abc import ABC, abstractmethod
 
 
-class Repository(ABC):
+class ABCRepository(ABC):
 
     @abstractmethod
     def add_user(self, user: User):

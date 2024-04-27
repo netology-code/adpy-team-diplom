@@ -2,13 +2,13 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from Repository import Repository
+from ABCRepository import ABCRepository
 import os
 
 from User import User
 
 
-class SQLRepository(Repository):
+class SQLRepository(ABCRepository):
 
     def add_user(self, user: User):
         pass
