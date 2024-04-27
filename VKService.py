@@ -36,8 +36,8 @@ class VKService:
 
     def users_search(self, criteria_dict) -> Result:
 
-        ss = vk_api.VkApi(token=self.token)
-        vk = ss.get_api()
+        #ss = vk_api.VkApi(token=self.token)
+        #vk = ss.get_api()
 
 
         """
