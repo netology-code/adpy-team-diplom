@@ -49,19 +49,18 @@ class VKService:
         url = 'https://api.vk.com/method/users.search'
         #criteria_dict
         params = {
-            'sex': 111,
+            'sex': 1,
             'status': 1,
             'age_from': 20,
-            'age_to': 25,
-            'count': 10,
+            'age_to': 45,
             'has_photo': 1,
             'fields': 'about,sex'
         }
 
-        try:
-            res = vk.users.search(**params)
-        except Exception as e:
-            print(e)
+        # try:
+        #     res = vk.users.search(**params)
+        # except Exception as e:
+        #     print(e)
         response = requests.get(url, params={**params, **self.params})
 
         if response.status_code == 200:
