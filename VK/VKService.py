@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import requests
 from dateutil.relativedelta import relativedelta
 
 
@@ -8,26 +9,47 @@ class VKService:
     VKService предоставляет методы для работы с api vk
     """
 
-    def get_users_info(self, vk_session, user_id) -> dict:
+    def users_info(self, user_id):
         """
-        Выполняет запрос к vk api users.get
-        :param vk_session: vk_api
-        :param user_id: vk идентификатор пользователя
-        :return: dict c информацией о пользователе
+        Выполняет get-запрос к vk api users.get с информацией о пользователе
+        :param user_id:
+        :return:
         """
+
+        url = 'https://api.vk.com/method/users.get'
 
         params = {
-            'user_id': user_id,
-            'fields': 'bdate,sex,city'
+            'user_ids': user_id,
+            'fields': 'about,sex'
         }
 
-        users_info = None
-        try:
-            users_info = vk_session.method('users.get', params)[0]
-        except Exception as e:
-            print(e)
+        response = requests.get(url, params={**self.params, **params})
 
-        return users_info
+        if response.status_code == 200:
+            return Result(True, response.json(), "")
+        else:
+            return Result(False, response.json(), response.json())
+
+    # def get_users_info(self, vk_session, user_id) -> dict:
+    #     """
+    #     Выполняет запрос к vk api users.get
+    #     :param vk_session: vk_api
+    #     :param user_id: vk идентификатор пользователя
+    #     :return: dict c информацией о пользователе
+    #     """
+    #
+    #     params = {
+    #         'user_id': user_id,
+    #         'fields': 'bdate,sex,city'
+    #     }
+    #
+    #     users_info = None
+    #     try:
+    #         users_info = vk_session.method('users.get', params)[0]
+    #     except Exception as e:
+    #         print(e)
+    #
+    #     return users_info
 
     def users_search(self, vk_session, criteria_dict) -> dict:
 
