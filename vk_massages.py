@@ -18,6 +18,29 @@ def send_message(user_id, message, keyboard=None):
         post['keyboard'] = keyboard.get_keyboard()
     session.method('messages.send', post)
 
+
+def get_hello_massage(user_id, first_name):
+    text_message = f'🚀 Привет, {first_name}!  👋  Я – бот, который экономит '
+    f'твое время и помогает найти любовь быстро и легко! '
+    f' ⏱️  Хочешь зарегистрироваться и начать поиск своей второй половинки?'
+
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('start', color=VkKeyboardColor.PRIMARY)
+    keyboard.add_button('хочу зарегистрироваться', color=VkKeyboardColor.POSITIVE)
+
+    message = {
+        'user_id': user_id,
+        'message': text_message,
+        'random_id': get_random_id(),
+        'keyboard': keyboard.get_keyboard()
+    }
+
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Хочу зарегистрироваться', color=VkKeyboardColor.POSITIVE)
+
+    return message
+
+
 if __name__ == '__main__':
     vk_reposiroty = VKRepository()
     for event in VkLongPoll(session).listen():
@@ -64,6 +87,7 @@ if __name__ == '__main__':
                     send_message(user_id, 'Критерии созданы! 👍 \n\n')
 
                 elif text == "Поиск":
+                    assa = ''
                     # users_list = vk_repository.get_users_list(criteria_dict)
                     # вывод первого кандидата  фото имя фамилия возраст город
                 elif text == "Изменить анкету":
