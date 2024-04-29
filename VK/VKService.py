@@ -1,44 +1,31 @@
-import vk_api
-import requests
-from Result import Result
-
 
 class VKService:
     """
     VKService предоставляет методы для работы с api vk
     """
-    def __init__(self, access_token, version='5.131'):
-        self.token = access_token
-        self.version = version
-        #self.input_quantity_photo = input_quantity_photo
-        self.params = {'access_token': self.token, 'v': self.version}
 
-    def users_info(self, user_id):
+    def get_users_info(self, vk_session, user_id) -> dict:
         """
-        Выполняет get-запрос к vk api users.get с информацией о пользователе
-        :param user_id:
-        :return:
+        Выполняет запрос к vk api users.get
+        :param vk_session: vk_api
+        :param user_id: vk идентификатор пользователя
+        :return: dict c информацией о пользователе
         """
-
-        url = 'https://api.vk.com/method/users.get'
 
         params = {
-            'user_ids': user_id,
-            'fields': 'about,sex'
+            'user_id': user_id,
+            'fields': 'sex, age, city, bdate'
         }
 
-        response = requests.get(url, params={**self.params, **params})
+        users_info = None
+        try:
+            users_info = vk_session.method('users.get', params)[0]
+        except Exception as e:
+            print(e)
 
-        if response.status_code == 200:
-            return Result(True, response.json(), "")
-        else:
-            return Result(False, response.json(), response.json())
+        return users_info
 
-    def users_search(self, criteria_dict) -> Result:
-
-        #ss = vk_api.VkApi(token=self.token)
-        #vk = ss.get_api()
-
+    def users_search(self, vk_session, criteria_dict) -> dict:
 
         """
         Выполняет get-запрос к vk api users.search с поиском пользователей
@@ -46,9 +33,7 @@ class VKService:
         :return: результат запроса в виде экземпляра класса Result
         """
 
-        url = 'https://api.vk.com/method/users.search'
-        #criteria_dict
-        params = {
+        criteria_dict = {
             'sex': 1,
             'status': 1,
             'age_from': 20,
@@ -57,29 +42,32 @@ class VKService:
             'fields': 'about,sex'
         }
 
-        # try:
-        #     res = vk.users.search(**params)
-        # except Exception as e:
-        #     print(e)
-        response = requests.get(url, params={**params, **self.params})
+        users_list = None
+        try:
+            users_list = vk_session.method('users.search', criteria_dict)
+        except Exception as e:
+            print(e)
 
-        if response.status_code == 200:
-            return Result(True, response.json(), "")
-        else:
-            return Result(False, response.json(), response.json())
+        return users_list
 
-    def users_photos(self, user_id) -> Result:
-        url = 'https://api.vk.com/method/photos.get'
-        params = {'owner_id': user_id,
-                  'extended': 1,
-                  'album_id': 'profile',
-                  'photo_sizes': 1}
-        response = requests.get(url, params={**self.params, **params})
+    # def users_photos(self, vk_session, user_id) -> Result:
+    #     url = 'https://api.vk.com/method/photos.get'
+    #     params = {'owner_id': user_id,
+    #               'extended': 1,
+    #               'album_id': 'profile',
+    #               'photo_sizes': 1}
+    #     response = requests.get(url, params={**self.params, **params})
+    #
+    #     if response.status_code == 200:
+    #         if response.json().get('error'):
+    #             return Result(False, response.json().get('error'), str(response.json().get('error')))
+    #         else:
+    #             return Result(True, response.json(), "")
+    #     else:
+    #         return Result(False, response.json(), response.json())
 
-        if response.status_code == 200:
-            if response.json().get('error'):
-                return Result(False, response.json().get('error'), str(response.json().get('error')))
-            else:
-                return Result(True, response.json(), "")
-        else:
-            return Result(False, response.json(), response.json())
+
+def determine_age(bdate: str) -> int:
+    birth_date = datetime.strptime(bdate, "%d.%m.%Y")
+
+    return relativedelta(datetime.now(), birth_date).years

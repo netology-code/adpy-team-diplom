@@ -6,13 +6,16 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.utils import get_random_id
 from dotenv import load_dotenv
 import os
-import vk_massages as ms
+import VK.vk_massages as ms
+from User import User
+from VK.VKService import VKService
 
 load_dotenv()
 
 token = os.getenv(key='ACCESS_TOKEN')
 vk_session = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk_session)
+users_list = {}
 
 
 # def get_user_response(vk_session, user_id, message):
@@ -75,13 +78,50 @@ longpoll = VkLongPoll(vk_session)
 #     for key, value in user_info.items():
 #         print(f'{key}: {value}')
 
+def handle_start(event_arg):
+    user_id = event_arg.user_id
+    if not user_id in users_list.keys():
+        user = User(user_id)
+        users_list[user_id] = user
+        users_info = vk_srv.get_users_info(vk_session, user.get_user_id())
+        if not users_info is None:
+            user.set_first_name(users_info['first_name'])
+            user.set_last_name(users_info['last_name'])
+            user.set_gender(users_info['sex'])
+            user.set_city(users_info['city'])
+            hello_message = ms.get_hello_massage(user.get_user_id(), user.get_first_name())
+            send_message(hello_message)
+        else:
+            hello_massage_error = ms.get_hello_massage_error(user.get_user_id())
+            send_message(hello_massage_error)
+
+
+def handle_registration(user):
+    message_registration = ms.get_registration_massage(user)
+    questions = {
+            "first_name": "Как тебя зовут?",
+            "last_name": "Отлично! А какая у тебя фамилия?",
+            "age": "Прекрасно! Сколько тебе лет?",
+            "city": "Замечательный возраст , мы почти закончили! В каком городе ты живешь?",
+            "about_me": "Прекрасно! Можешь кратко рассказать о своей жизни",
+        }
+
+    send_message(message_registration)
+
+
+def send_message(message):
+    vk_session.method('messages.send', message)
+
 
 if __name__ == '__main__':
+    vk_srv = VKService()
     for event in VkLongPoll(vk_session).listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
-            text = event.text
+            text = event.text.lower()
             if text == 'start':
+                handle_start(event)
+            elif text == 'хочу зарегистрироваться':
+                handle_registration(users_list[event.user_id])
+            # if dict(event.payload)['']
+            # '{"action":"registration"}'
 
-                hello_message = ms.get_hello_massage(
-
-                ).method('messages.send', post)
