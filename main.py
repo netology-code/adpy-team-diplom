@@ -13,7 +13,7 @@ from VK.VKService import VKService
 load_dotenv()
 
 token = os.getenv(key='ACCESS_TOKEN')
-vk_session = vk_api.VkApi(token=token)
+vk_session = vk_api.VkApi(token=token, api_version='5.199')
 longpoll = VkLongPoll(vk_session)
 users_list = {}
 
@@ -88,6 +88,7 @@ def handle_start(event_arg):
             user.set_first_name(users_info['first_name'])
             user.set_last_name(users_info['last_name'])
             user.set_gender(users_info['sex'])
+            user.set_age(vk_srv.determine_age(users_info['bdate']))
             user.set_city(users_info['city'])
             hello_message = ms.get_hello_massage(user.get_user_id(), user.get_first_name())
             send_message(hello_message)

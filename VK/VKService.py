@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from dateutil.relativedelta import relativedelta
+
 
 class VKService:
     """
@@ -14,7 +18,7 @@ class VKService:
 
         params = {
             'user_id': user_id,
-            'fields': 'sex, age, city, bdate'
+            'fields': 'bdate,sex,city'
         }
 
         users_info = None
@@ -67,7 +71,7 @@ class VKService:
     #         return Result(False, response.json(), response.json())
 
 
-def determine_age(bdate: str) -> int:
-    birth_date = datetime.strptime(bdate, "%d.%m.%Y")
+    def determine_age(bdate: str) -> int:
+        birth_date = datetime.strptime(bdate, "%d.%m.%Y")
 
-    return relativedelta(datetime.now(), birth_date).years
+        return relativedelta(datetime.now(), birth_date).years
