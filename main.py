@@ -83,6 +83,7 @@ def handle_start(event_arg):
     if not user_id in users_list.keys():
         user = User(user_id)
         users_list[user_id] = user
+        #users_info = vk_srv.get_users_info(vk_session, user.get_user_id())
         users_info = vk_srv.get_users_info(vk_session, user.get_user_id())
         if not users_info is None:
             user.set_first_name(users_info['first_name'])

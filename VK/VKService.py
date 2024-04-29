@@ -3,6 +3,8 @@ from datetime import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 
+from Result import Result
+
 
 class VKService:
     """
@@ -20,7 +22,7 @@ class VKService:
 
         params = {
             'user_ids': user_id,
-            'fields': 'about,sex'
+            'fields': 'bdate,sex,city'
         }
 
         response = requests.get(url, params={**self.params, **params})
