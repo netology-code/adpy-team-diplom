@@ -12,18 +12,22 @@ class CheckDBSQL(ABCCheckDb):
             bool : True - есть база данных, False - нет базы данных
         """
 
-        connect = psycopg2.connect(dbname='postgres',
+        self.connect = psycopg2.connect(dbname='postgres',
                                         user=os.getenv(key='USER_NAME_DB'),
                                         password=os.getenv(key='USER_PASSWORD_DB'))
 
-        with connect.cursor() as cursor:
-            cursor = connect.cursor()
+        with self.connect.cursor() as cursor:
+            cursor = self.connect.cursor()
             cursor.execute("SELECT 1 FROM pg_database WHERE datname='{dbname}'".
                            format(dbname=self.db_name))
-            print(cursor.fetchone())
+
             if cursor.fetchone() is None:
                 return False
             else:
+                self.connect.close()
+                self.connect = psycopg2.connect(dbname=self.db_name,
+                                                user=os.getenv(key='USER_NAME_DB'),
+                                                password=os.getenv(key='USER_PASSWORD_DB'))
                 return True
 
     def create_db(self):
@@ -42,16 +46,13 @@ class CheckDBSQL(ABCCheckDb):
                 try:
                     cursor.execute("CREATE DATABASE %s;" % self.db_name)
                     self.connect.commit()
-                    self.connect = psycopg2.connect(dbname=self.db_name,
-                                                    user=os.getenv(key='USER_NAME_DB'),
-                                                    password=os.getenv(key='USER_PASSWORD_DB'))
                 except Exception as e:
-                    self.connect = psycopg2.connect(dbname=self.db_name,
-                                                    user=os.getenv(key='USER_NAME_DB'),
-                                                    password=os.getenv(key='USER_PASSWORD_DB'))
-                    self.error = e
+                    print(e)
                 finally:
                     self.connect.close()
+                    self.connect = psycopg2.connect(dbname=self.db_name,
+                                                    user=os.getenv(key='USER_NAME_DB'),
+                                                    password=os.getenv(key='USER_PASSWORD_DB'))
 
     def exists_tables(self, table_name) -> bool:
         """
@@ -62,11 +63,11 @@ class CheckDBSQL(ABCCheckDb):
         with self.connect.cursor() as cursor:
             cursor.execute("select exists(select 1 from information_schema.tables where table_name=%s)",
                         [table_name])
-        return True if cursor.fetchone() else False
+            return True if cursor.fetchone() else False
 
     def create_tables(self):
 
-        if self.error is None:
+        if not self.error is None:
             return
 
         with self.connect.cursor() as cursor:
@@ -156,4 +157,16 @@ class CheckDBSQL(ABCCheckDb):
                 self.error = 'Не все таблицы созданы'
 
     def fill_tables(self):
-        pass
+
+        if not self.error is None:
+            return
+
+        sql = """INSERT INTO genders(id, gender)
+                     VALUES(%s, %s);"""
+
+        with self.connect.cursor() as cursor:
+            cursor.execute(sql, (1, 'Женщина'))
+            cursor.execute(sql, (2, 'Мужчина'))
+            self.connect.commit()
+
+        self.connect.close()

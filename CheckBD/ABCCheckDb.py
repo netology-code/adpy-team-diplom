@@ -51,7 +51,7 @@ class ABCCheckDb(ABC):
         Создание таблиц
         """
 
-        if self.error is None:
+        if not self.error is None:
             return
 
         # Проверим наличие всех нужных тамблиц

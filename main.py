@@ -100,29 +100,37 @@ if __name__ == '__main__':
         for event in VkLongPoll(vk_session).listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
                 text = event.text.lower()
+
                 # Начало работы
                 if text == 'start':
                     handle_start(event.user_id)
+
                 # Регистрация
                 elif text == 'хочу зарегистрироваться':
                     message_id = handle_registration(users_list[event.user_id])
                     users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+
                 # Нажатие inline кнопок
                 elif event.extra_values.get('payload'):
+
                     # Редактирование пунктов анкеты
                     if json.loads(event.extra_values.get('payload')).get('action_edit'):
                         str_arg = json.loads(event.extra_values.get('payload')).get('action_edit')
                         send_ask_edit(users_list[event.user_id], str_arg)
+
                     # Сохранить анкету
                     elif json.loads(event.extra_values.get('payload')).get('action_save'):
                         s = ''
+
                     # Отмена текущего режима
                     elif json.loads(event.extra_values.get('payload')).get('action_cancel'):
+
                         # Отмена редактирования пункта анкеты
                         if json.loads(event.extra_values.get('payload')).get('action_cancel') == 'cancel_edit_anketa':
                             users_list[event.user_id].set_step(None)
                             message_id = handle_registration(users_list[event.user_id])
                             users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+
                 # Получение данных для текущего шага
                 elif not users_list[event.user_id].get_step() is None:
                     set_param_anketa(users_list[event.user_id], text)
