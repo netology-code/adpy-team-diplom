@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
                     # Сохранить анкету
                     elif json.loads(event.extra_values.get('payload')).get('action_save'):
-                        s = ''
+                        print(users_list[event.user_id].to_dict())
 
                     # Отмена текущего режима
                     elif json.loads(event.extra_values.get('payload')).get('action_cancel'):

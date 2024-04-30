@@ -161,12 +161,14 @@ class CheckDBSQL(ABCCheckDb):
         if not self.error is None:
             return
 
-        sql = """INSERT INTO genders(id, gender)
-                     VALUES(%s, %s);"""
-
+        sql = """SELECT * FROM genders;"""
         with self.connect.cursor() as cursor:
-            cursor.execute(sql, (1, 'Женщина'))
-            cursor.execute(sql, (2, 'Мужчина'))
-            self.connect.commit()
+            cursor.execute(sql)
+            if len(cursor.fetchall()) == 0:
+                sql = """INSERT INTO genders(id, gender)
+                             VALUES(%s, %s);"""
+                cursor.execute(sql, (1, 'Женщина'))
+                cursor.execute(sql, (2, 'Мужчина'))
+                self.connect.commit()
 
         self.connect.close()
