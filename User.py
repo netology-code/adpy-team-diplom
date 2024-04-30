@@ -6,9 +6,10 @@ class User:
         self.__last_name = ""
         self.__age = 0
         self.__gender = 0
-        self.__city = {}
+        self.__city = None
         self.__about_me = ""
         self.__id_msg_edit_anketa_id = -1
+        self.__step = None
 
     def get_user_id(self):
         return self.__id
@@ -58,6 +59,12 @@ class User:
     def get_id_msg_edit_anketa(self):
         return self.__id_msg_edit_anketa_id
 
+    def set_step(self, arg: str):
+        self.__step = arg
+
+    def get_step(self):
+        return self.__step
+
     def to_dict(self):
         return {
             'id': self.__id,
@@ -65,6 +72,6 @@ class User:
             'last_name': self.__last_name,
             'age': self.__age,
             'gender': self.__gender,
-            'city': self.__city,
+            'city': self.__city['id'],
             'about_me': self.__about_me
         }

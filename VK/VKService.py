@@ -33,27 +33,6 @@ class VKService:
         else:
             return None
 
-    # def get_users_info(self, vk_session, user_id) -> dict:
-    #     """
-    #     Выполняет запрос к vk api users.get
-    #     :param vk_session: vk_api
-    #     :param user_id: vk идентификатор пользователя
-    #     :return: dict c информацией о пользователе
-    #     """
-    #
-    #     params = {
-    #         'user_id': user_id,
-    #         'fields': 'bdate,sex,city'
-    #     }
-    #
-    #     users_info = None
-    #     try:
-    #         users_info = vk_session.method('users.get', params)[0]
-    #     except Exception as e:
-    #         print(e)
-    #
-    #     return users_info
-
     def users_search(self, vk_session, criteria_dict) -> dict:
 
         """
@@ -99,3 +78,22 @@ class VKService:
         birth_date = datetime.strptime(bdate, "%d.%m.%Y")
 
         return relativedelta(datetime.now(), birth_date).years
+
+    def get_city_by_name(self, token, text):
+        url = 'https://api.vk.com/method/database.getCities'
+
+        params = {
+            'q': text,
+            'access_token': token,
+            'v': '5.199'
+        }
+        city = ''
+        response = requests.get(url, params={**params})
+        if response.status_code == 200:
+            for item in response.json()['response']['items']:
+                if item['title'].lower() == text:
+                    city = item
+                    break
+            return city
+        else:
+            return None

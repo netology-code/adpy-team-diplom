@@ -83,6 +83,8 @@ def get_registration_massage(user: User):
 
 def get_edit_massage(user_id, str_arg):
     text_message = f'Задайте новое значение ' + edit_dict[str_arg] + ':'
+    if str_arg == 'gender':
+        text_message += f'1 - Женщина, 2 - Мужчина'
 
     keyboard = VkKeyboard(one_time=True)
     keyboard.add_button('Отмена', color=VkKeyboardColor.NEGATIVE,
