@@ -31,7 +31,8 @@ def handle_start(user_id):
             user.set_first_name(users_info['first_name'])
             user.set_last_name(users_info['last_name'])
             user.set_gender(users_info['sex'])
-            user.set_age(vk_srv.determine_age(users_info['bdate']))
+            if users_info.get('bdate'):
+               user.set_age(vk_srv.determine_age(users_info['bdate']))
             user.set_city(users_info['city'])
             hello_message = ms.get_hello_massage(user.get_user_id(), user.get_first_name())
             send_message(hello_message)
