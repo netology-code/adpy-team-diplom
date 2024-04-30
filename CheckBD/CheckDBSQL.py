@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import psycopg2
 import os
 from CheckBD.ABCCheckDb import ABCCheckDb
@@ -18,7 +17,7 @@ class CheckDBSQL(ABCCheckDb):
                                         password=os.getenv(key='USER_PASSWORD_DB'))
 
         with connect.cursor() as cursor:
-            cursor = self.connect.cursor()
+            cursor = connect.cursor()
             cursor.execute("SELECT 1 FROM pg_database WHERE datname='{dbname}'".
                            format(dbname=self.db_name))
             print(cursor.fetchone())
@@ -43,58 +42,57 @@ class CheckDBSQL(ABCCheckDb):
                 try:
                     cursor.execute("CREATE DATABASE %s;" % self.db_name)
                     self.connect.commit()
+                    self.connect = psycopg2.connect(dbname=self.db_name,
+                                                    user=os.getenv(key='USER_NAME_DB'),
+                                                    password=os.getenv(key='USER_PASSWORD_DB'))
                 except Exception as e:
+                    self.connect = psycopg2.connect(dbname=self.db_name,
+                                                    user=os.getenv(key='USER_NAME_DB'),
+                                                    password=os.getenv(key='USER_PASSWORD_DB'))
                     self.error = e
                 finally:
                     self.connect.close()
 
-    def exists_tables(self, name_table) -> bool:
+    def exists_tables(self, table_name) -> bool:
         """
         Проверка, все ли нужные таблицы созданы
         Returns:
             bool : True - если созданы, False - нет
         """
-        self.connect = psycopg2.connect(dbname=self.db_name,
-                                        user=os.getenv(key='USER_NAME_DB'),
-                                        password=os.getenv(key='USER_PASSWORD_DB'))
-
-        cur.execute("select exists(select 1 from information_schema.tables where table_name=%s)",
-                    [table_name])
-        return True if cur.fetchone() else False
-        pass
+        with self.connect.cursor() as cursor:
+            cursor.execute("select exists(select 1 from information_schema.tables where table_name=%s)",
+                        [table_name])
+        return True if cursor.fetchone() else False
 
     def create_tables(self):
-
-        self.connect = psycopg2.connect(dbname=self.db_name,
-                                        user=os.getenv(key='USER_NAME_DB'),
-                                        password=os.getenv(key='USER_PASSWORD_DB'))
 
         if self.error is None:
             return
 
         with self.connect.cursor() as cursor:
+
             cursor.execute("""
                     CREATE TABLE IF NOT EXISTS genders(
                         id SERIAL PRIMARY KEY,
-                        gender VARCHAR(10)
+                        gender VARCHAR(10) NOT NULL
                     );
                     """)
 
             cursor.execute("""
                     CREATE TABLE IF NOT EXISTS cities(
                         id SERIAL PRIMARY KEY,
-                        city VARCHAR(50)
+                        city VARCHAR(50) NOT NULL
                     );
                     """)
 
             cursor.execute("""
                     CREATE TABLE IF NOT EXISTS users(
                         id SERIAL PRIMARY KEY,
-                        first_name VARCHAR(50),
-                        last_name VARCHAR(50),
-                        age int,
-                        gender_id int,
-                        city_id int,
+                        first_name VARCHAR(50) NOT NULL,
+                        last_name VARCHAR(50) NOT NULL,
+                        age int NOT NULL,
+                        gender_id int NOT NULL,
+                        city_id int NOT NULL,
                         FOREIGN KEY (gender_id) REFERENCES genders(id),
                         FOREIGN KEY (city_id) REFERENCES cities(id),
                         about_me VARCHAR(200)
@@ -102,20 +100,32 @@ class CheckDBSQL(ABCCheckDb):
                     """)
 
             cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS criteria(
+                            id SERIAL PRIMARY KEY,
+                            user_id int NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES genders(id),
+                            gender_id int NOT NULL,
+                            age int NOT NULL,
+                            city_id int NOT NULL,
+                            photo_bool int  NOT NULL
+                        );
+                        """)
+
+            cursor.execute("""
                             CREATE TABLE IF NOT EXISTS favorites(
                                 id SERIAL PRIMARY KEY,
-                                user_id int,
+                                user_id int NOT NULL,
                                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                first_name VARCHAR(50),
-                                last_name VARCHAR(50),
-                                age int,
-                                gender_id int,
+                                first_name VARCHAR(50) NOT NULL,
+                                last_name VARCHAR(50) NOT NULL,
+                                age int NOT NULL,
+                                gender_id int NOT NULL,
                                 FOREIGN KEY (gender_id) REFERENCES genders(id),
-                                profile VARCHAR(50),
+                                profile VARCHAR(50) NOT NULL,
                                 photo1 VARCHAR(50),
                                 photo2 VARCHAR(50),
                                 photo3 VARCHAR(50),
-                                city_id int,
+                                city_id int NOT NULL,
                                 FOREIGN KEY (city_id) REFERENCES cities(id)
                             );
                             """)
@@ -123,18 +133,18 @@ class CheckDBSQL(ABCCheckDb):
             cursor.execute("""
                             CREATE TABLE IF NOT EXISTS exceptions(
                                 id SERIAL PRIMARY KEY,
-                                user_id int,
+                                user_id int NOT NULL,
                                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                first_name VARCHAR(50),
-                                last_name VARCHAR(50),
-                                age int,
-                                gender_id int,
+                                first_name VARCHAR(50) NOT NULL,
+                                last_name VARCHAR(50) NOT NULL,
+                                age int NOT NULL,
+                                gender_id int NOT NULL,
                                 FOREIGN KEY (gender_id) REFERENCES genders(id),
-                                profile VARCHAR(50),
+                                profile VARCHAR(50) NOT NULL,
                                 photo1 VARCHAR(50),
                                 photo2 VARCHAR(50),
                                 photo3 VARCHAR(50),
-                                city_id int,
+                                city_id int NOT NULL,
                                 FOREIGN KEY (city_id) REFERENCES cities(id)
                             );
                             """)

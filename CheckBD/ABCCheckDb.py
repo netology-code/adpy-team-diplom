@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 class ABCCheckDb(ABC):
     def __init__(self):
         self.error = None
+        self.connect = None
         self.db_name = 'findme'
-        self.tables = ['genders', 'cities', 'users', 'favorites', 'exceptions']
+        self.tables = ['criteria', 'genders', 'cities', 'users', 'favorites', 'exceptions']
 
     def check_db(self) -> bool:
         """
@@ -15,7 +16,6 @@ class ABCCheckDb(ABC):
         self.create_db()
         self.create_tables()
         self.fill_tables()
-        self.exists_tables()
 
         return self.error is None
 
