@@ -8,6 +8,7 @@ class User:
         self.__gender = 0
         self.__city = {}
         self.__about_me = ""
+        self.__id_msg_edit_anketa_id = -1
 
     def get_user_id(self):
         return self.__id
@@ -36,6 +37,9 @@ class User:
     def get_gender(self):
         return self.__gender
 
+    def get_gender_str(self):
+        return 'Женщина' if self.__gender == 1 else 'Мужчина'
+
     def set_city(self, arg: int):
         self.__city = arg
 
@@ -47,6 +51,12 @@ class User:
 
     def get_about_name(self):
         return self.__about_me
+
+    def set_id_msg_edit_anketa(self, arg: int):
+        self.__id_msg_edit_anketa_id = arg
+
+    def get_id_msg_edit_anketa(self):
+        return self.__id_msg_edit_anketa_id
 
     def to_dict(self):
         return {

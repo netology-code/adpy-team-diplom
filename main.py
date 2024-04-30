@@ -1,9 +1,6 @@
 import json
-
 import vk_api
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
-from vk_api.utils import get_random_id
 from dotenv import load_dotenv
 import os
 import VK.vk_massages as ms
@@ -13,70 +10,10 @@ from VK.VKService import VKService
 load_dotenv()
 
 token = os.getenv(key='ACCESS_TOKEN')
-vk_session = vk_api.VkApi(token=token, api_version='5.199')
+vk_session = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk_session)
 users_list = {}
 
-
-# def get_user_response(vk_session, user_id, message):
-#     vk_session.method('messages.send', {
-#         'user_id': user_id,
-#         'message': message,
-#         'random_id': get_random_id()
-#     })
-#     for event in VkLongPoll(vk_session).listen():
-#         if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
-#             return event.text
-
-
-# def create_user_profile(user_id, vk_session):
-#     user_info = {
-#         "user_id": user_id,
-#         "sex": user_id
-#     }
-#
-#     questions = {
-#         "first_name": "Как тебя зовут?",
-#         "last_name": "Отлично! А какая у тебя фамилия?",
-#         "age": "Прекрасно! Сколько тебе лет?",
-#         "city": "Замечательный возраст , мы почти закончили! В каком городе ты живешь?",
-#         "about_me": "Прекрасно! Можешь кратко рассказать о своей жизни",
-#     }
-#
-#     for key, question in questions.items():
-#         user_info[key] = get_user_response(vk_session, user_id, question) # Получаем ответы пользователя с помощью функции get_user_response
-#
-#         # Запись в JSON-файл
-#     try:
-#         with open('questionnaires.json', 'r+') as f:
-#             try:
-#                 data = json.load(f)
-#             except json.JSONDecodeError:
-#                 data = {}
-#
-#             print("Data before deletion:", data)  # Вывод data до удаления
-#
-#             # Удаление предыдущей анкеты, если она существует
-#             if user_id in data:
-#                 del data[user_id]
-#                 print(f"Deleted profile for user {user_id}")
-#             else:
-#                 print(f"No previous profile found for user {user_id}")
-#
-#             print("Data after deletion:", data)  # Вывод data после удаления
-#
-#             data[user_id] = user_info
-#             f.seek(0)
-#             json.dump(data, f, indent=4)
-#
-#     except FileNotFoundError:  # Если JSON-файл не существует
-#         with open('questionnaires.json', 'w') as f:
-#             json.dump({user_id: user_info}, f, indent=4)
-#
-#     print(f'Анкета пользователя {user_id} сохранена (предыдущая анкета удалена)!')
-#     print(f'Анкета пользователя {user_id}: {user_info}')
-#     for key, value in user_info.items():
-#         print(f'{key}: {value}')
 
 def handle_start(event_arg):
     user_id = event_arg.user_id
@@ -84,7 +21,7 @@ def handle_start(event_arg):
         user = User(user_id)
         users_list[user_id] = user
         #users_info = vk_srv.get_users_info(vk_session, user.get_user_id())
-        users_info = vk_srv.get_users_info(vk_session, user.get_user_id())
+        users_info = vk_srv.get_users_info(token=os.getenv(key='ACCESS_TOKEN_API'), user_id=user.get_user_id())
         if not users_info is None:
             user.set_first_name(users_info['first_name'])
             user.set_last_name(users_info['last_name'])
@@ -99,20 +36,19 @@ def handle_start(event_arg):
 
 
 def handle_registration(user):
+    if user.get_id_msg_edit_anketa() > -1:
+        vk_session.method('messages.delete', {'message_ids': user.get_id_msg_edit_anketa(), 'delete_for_all': 1})
     message_registration = ms.get_registration_massage(user)
-    questions = {
-            "first_name": "Как тебя зовут?",
-            "last_name": "Отлично! А какая у тебя фамилия?",
-            "age": "Прекрасно! Сколько тебе лет?",
-            "city": "Замечательный возраст , мы почти закончили! В каком городе ты живешь?",
-            "about_me": "Прекрасно! Можешь кратко рассказать о своей жизни",
-        }
+    return send_message(message_registration)
 
-    send_message(message_registration)
+
+def send_ask_edit(user_id, str_arg):
+    message_edit = ms.get_edit_massage(user_id, str_arg)
+    send_message(message_edit)
 
 
 def send_message(message):
-    vk_session.method('messages.send', message)
+    return vk_session.method('messages.send', message)
 
 
 if __name__ == '__main__':
@@ -123,7 +59,15 @@ if __name__ == '__main__':
             if text == 'start':
                 handle_start(event)
             elif text == 'хочу зарегистрироваться':
-                handle_registration(users_list[event.user_id])
-            # if dict(event.payload)['']
-            # '{"action":"registration"}'
-
+                message_id = handle_registration(users_list[event.user_id])
+                users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+            elif event.extra_values.get('payload'):
+                if json.loads(event.extra_values.get('payload')).get('action_edit'):
+                    str_arg = json.loads(event.extra_values.get('payload')).get('action_edit')
+                    send_ask_edit(event.user_id, str_arg)
+                elif json.loads(event.extra_values.get('payload')).get('action_save'):
+                    s = ''
+                elif json.loads(event.extra_values.get('payload')).get('action_cancel'):
+                    if json.loads(event.extra_values.get('payload')).get('action_cancel') == 'cancel_edit_anketa':
+                        message_id = handle_registration(users_list[event.user_id])
+                        users_list[event.user_id].set_id_msg_edit_anketa(message_id)

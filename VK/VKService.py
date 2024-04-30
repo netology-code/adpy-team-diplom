@@ -11,7 +11,7 @@ class VKService:
     VKService предоставляет методы для работы с api vk
     """
 
-    def users_info(self, user_id):
+    def get_users_info(self, token, user_id):
         """
         Выполняет get-запрос к vk api users.get с информацией о пользователе
         :param user_id:
@@ -22,15 +22,16 @@ class VKService:
 
         params = {
             'user_ids': user_id,
-            'fields': 'bdate,sex,city'
+            'fields': 'bdate,sex,city',
+            'access_token': token,
+            'v': '5.199'
         }
 
-        response = requests.get(url, params={**self.params, **params})
-
+        response = requests.get(url, params={**params})
         if response.status_code == 200:
-            return Result(True, response.json(), "")
+            return response.json()['response'][0]
         else:
-            return Result(False, response.json(), response.json())
+            return None
 
     # def get_users_info(self, vk_session, user_id) -> dict:
     #     """
@@ -94,8 +95,7 @@ class VKService:
     #     else:
     #         return Result(False, response.json(), response.json())
 
-
-    def determine_age(bdate: str) -> int:
+    def determine_age(self, bdate: str) -> int:
         birth_date = datetime.strptime(bdate, "%d.%m.%Y")
 
         return relativedelta(datetime.now(), birth_date).years
