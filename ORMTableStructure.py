@@ -27,7 +27,7 @@ class Genders(Base):
     )
 
     gender = sq.Column(
-        sq.String(length=10),
+        sq.String(length=250),
         nullable=False,
         unique=True
     )
@@ -53,7 +53,7 @@ class Cities(Base):
     )
 
     name = sq.Column(
-        sq.String(length=50),
+        sq.String(length=250),
         nullable=False,
         unique=True
     )
@@ -83,12 +83,12 @@ class Users(Base):
     )
 
     first_name = sq.Column(
-        sq.String(length=50),
+        sq.String(length=250),
         nullable=False
     )
 
     last_name = sq.Column(
-        sq.String(length=50),
+        sq.String(length=250),
         nullable=False
     )
 
@@ -198,12 +198,12 @@ class Favorites(Base):
     )
 
     first_name = sq.Column(
-        sq.String(length=50),
+        sq.String(length=250),
         nullable=False
     )
 
     last_name = sq.Column(
-        sq.String(length=50),
+        sq.String(length=250),
         nullable=False
     )
 
@@ -227,21 +227,21 @@ class Favorites(Base):
     )
 
     profile = sq.Column(
-        sq.String(length=50),
+        sq.String(length=100),
         nullable=False
     )
 
     photo1 = sq.Column(
-        sq.String(length=50),
+        sq.String(length=500),
         nullable=False
     )
 
     photo2 = sq.Column(
-        sq.String(length=50),
+        sq.String(length=500),
     )
 
     photo3 = sq.Column(
-        sq.String(length=50),
+        sq.String(length=500),
     )
 
     city_id = sq.Column(
@@ -252,7 +252,7 @@ class Favorites(Base):
     )
 
 
-# Класс, отвечающий за таблицу favorites
+# Класс, отвечающий за таблицу exceptions
 class Exceptions(Base):
     """
     Название таблицы:
@@ -281,12 +281,12 @@ class Exceptions(Base):
     )
 
     first_name = sq.Column(
-        sq.String(50),
+        sq.String(250),
         nullable=False
     )
 
     last_name = sq.Column(
-        sq.String(length=50),
+        sq.String(length=250),
         nullable=False
     )
 
@@ -310,21 +310,21 @@ class Exceptions(Base):
     )
 
     profile = sq.Column(
-        sq.String(50),
+        sq.String(100),
         nullable=False
     )
 
     photo1 = sq.Column(
-        sq.String(50),
+        sq.String(500),
         nullable=False
     )
 
     photo2 = sq.Column(
-        sq.String(50),
+        sq.String(500),
     )
 
     photo3 = sq.Column(
-        sq.String(50),
+        sq.String(500),
     )
 
     city_id = sq.Column(

@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 
 import sqlalchemy
 from psycopg2 import errors
@@ -20,6 +21,8 @@ class ORMRepository(ABCRepository):
         Выводной параметр:
         - движок sqlalchemy
         """
+
+        load_dotenv()
 
         dbname = 'findme'
         user = os.getenv(key='USER_NAME_DB')

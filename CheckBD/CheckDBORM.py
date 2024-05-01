@@ -1,11 +1,12 @@
 import os
+from dotenv import load_dotenv
 
 import sqlalchemy as sq
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 
 from ORMTableStructure import form_tables, get_table_list
-from CheckDB.ABCCheckDb import ABCCheckDb
+from CheckBD.ABCCheckDb import ABCCheckDb
 
 
 class CheckDBORM(ABCCheckDb):
@@ -18,6 +19,8 @@ class CheckDBORM(ABCCheckDb):
         Выводной параметр:
         - движок Sqlalchemy
         """
+
+        load_dotenv()
 
         dbname = 'findme'
         user = os.getenv(key='USER_NAME_DB')
