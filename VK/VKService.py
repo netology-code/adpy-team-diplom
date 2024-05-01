@@ -33,7 +33,7 @@ class VKService:
         else:
             return None
 
-    def users_search(self, vk_session, criteria_dict, token) -> dict:
+    def users_search(self, criteria_dict, token) -> dict:
 
         """
         Выполняет get-запрос к vk api users.search с поиском пользователей
@@ -53,29 +53,31 @@ class VKService:
             'v': '5.199'
         }
 
-        users_list = None
         response = requests.get(url, params={**criteria_dict})
         if response.status_code == 200:
             users_list = response.json().get('response').get('items')
-            users_list = self.add_photos(users_list)
+            users_list = self.add_photos(users_list, token)
+            if len(users_list) != 0:
+                return users_list
+            else:
+                return None
+        else:
+            return None
 
-        return users_list
 
-
-
-    def add_photos(self, users_list) -> list:
+    def add_photos(self, users_list, token) -> list:
         """
         Выполняет добавление информации о фото пользователей
         :param users_list: список пользователей
         :return: users_list дополненный список пользователей
         """
         for user in users_list:
-            user['photos'] = self.get_user_photo(user.get('id'))
+            user['photos'] = self.get_user_photo(user.get('id'), token)
 
         return users_list
 
-    def get_user_photo(self, user_id):
-        result = self.vk_service.users_photos(user_id)
+    def get_user_photo(self, user_id, token):
+        result = self.users_photos(user_id, token)
         photo_list = []
         photo_dict_likes = {}
         if result.success:
@@ -102,6 +104,23 @@ class VKService:
 
         return photo_list
 
+    def users_photos(self, user_id, token) -> Result:
+        url = 'https://api.vk.com/method/photos.get'
+        params = {'owner_id': user_id,
+                  'access_token': token,
+                  'v': '5.199',
+                  'extended': 1,
+                  'album_id': 'profile',
+                  'photo_sizes': 1}
+        response = requests.get(url, params={**params})
+
+        if response.status_code == 200:
+            if response.json().get('error'):
+                return Result(False, response.json().get('error'), str(response.json().get('error')))
+            else:
+                return Result(True, response.json(), "")
+        else:
+            return Result(False, response.json(), response.json())
 
     def determine_age(self, bdate: str) -> int:
         birth_date = datetime.strptime(bdate, "%d.%m.%Y")

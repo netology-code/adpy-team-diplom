@@ -10,29 +10,32 @@ class User:
         self.__about_me = ""
         self.__id_msg_edit_anketa_id = -1
         self.__step = None
+        self.__index_view = -1
+        self.__list_cards = None
+        self.__list_cards = None
 
     def get_user_id(self):
         return self.__id
 
-    def set_first_name(self, arg: str):
+    def set_first_name(self, arg):
         self.__first_name = arg
 
     def get_first_name(self):
         return self.__first_name
 
-    def set_last_name(self, arg: str):
+    def set_last_name(self, arg):
         self.__last_name = arg
 
     def get_last_name(self):
         return self.__last_name
 
-    def set_age(self, arg: int):
+    def set_age(self, arg):
         self.__age = arg
 
     def get_age(self):
         return self.__age
 
-    def set_gender(self, arg: int):
+    def set_gender(self, arg):
         self.__gender = arg
 
     def get_gender(self):
@@ -41,29 +44,44 @@ class User:
     def get_gender_str(self):
         return 'Женщина' if self.__gender == 1 else 'Мужчина'
 
-    def set_city(self, arg: int):
+    def set_city(self, arg):
         self.__city = arg
 
-    def get_city(self) -> dict:
+    def get_city(self):
         return self.__city
 
-    def set_about_me(self, arg: str):
+    def set_about_me(self, arg):
         self.__about_me = arg
 
     def get_about_me(self):
         return self.__about_me
 
-    def set_id_msg_edit_anketa(self, arg: int):
+    def set_id_msg_edit_anketa(self, arg):
         self.__id_msg_edit_anketa_id = arg
 
     def get_id_msg_edit_anketa(self):
         return self.__id_msg_edit_anketa_id
 
-    def set_step(self, arg: str):
+    def set_step(self, arg):
         self.__step = arg
 
     def get_step(self):
         return self.__step
+
+    def set_index_view(self, arg):
+        self.__index_view = arg
+
+    def get_index_view(self):
+        return self.__index_view
+
+    def set_list_cards(self, arg):
+        self.__list_cards = arg
+
+    def get_list_cards(self):
+        return self.__list_cards
+
+    def get_card(self):
+        return self.__list_cards[self.__index_view]
 
     def to_dict(self):
         return {

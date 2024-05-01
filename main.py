@@ -1,5 +1,9 @@
 import json
+from io import BytesIO
+
+import requests
 import vk_api
+from vk_api import VkUpload
 from vk_api.longpoll import VkLongPoll, VkEventType
 from dotenv import load_dotenv
 import os
@@ -21,6 +25,7 @@ users_list = {}
 realization = os.getenv(key='REALIZATION')
 repository: ABCRepository
 сheckDB: ABCCheckDb
+upload:VkUpload
 
 
 def handle_start(user_id):
@@ -117,13 +122,66 @@ def save_anketa(user: User):
 
 
 def main_menu(user: User):
+    # Очистим данные о текущем списке просмотра
+    user.set_list_cards(None)
+    user.set_index_view(-1)
+    user.set_id_msg_edit_anketa(-1)
+
+    # Вывод главного меню
     message_main_menu = ms.get_main_menu_massage(user)
     send_message(message_main_menu)
 
+def upload_photo(upload, url):
+    img = requests.get(url).content
+    f = BytesIO(img)
 
-def find_users(user: User):
-    users_list = vk_srv.users_search(vk_session, {}, token_api)
-    assa = 1
+    response = upload.photo_messages(f)[0]
+
+    owner_id = response['owner_id']
+    photo_id = response['id']
+    access_key = response['access_key']
+
+    return {'owner_id': owner_id, 'photo_id': photo_id, 'access_key': access_key}
+
+def find_users(upload, vk_session, user: User):
+    list_cards = vk_srv.users_search({}, token_api)
+    if not list_cards is None:
+        user.set_list_cards(list_cards)
+        user.set_index_view(-1)
+
+
+        view_next_card(upload, user)
+    else:
+        message_error_search = ms.get_message_error_search(user.get_user_id())
+        send_message(message_error_search)
+
+
+def view_next_card(upload, user):
+    next_index = user.get_index_view()
+    next_index = next_index + 1
+    user.set_index_view(next_index)
+
+    f = user.get_list_cards()[next_index]['photos'][0]
+
+    photo1 = upload_photo(upload, f)
+    attachment = f'photo{photo1["owner_id"]}_{photo1["photo_id"]}_{photo1["access_key"]}'
+    message_view = ms.get_message_view(attachment, user.get_card(), user)
+    send_message(message_view)
+
+
+def view_back_card(user):
+    next_index = user.get_index_view()
+    next_index = next_index - 1
+    user.set_index_view(next_index)
+    message_view = ms.get_message_view(user.get_card(), user)
+    send_message(message_view)
+    # message = {
+    #     'user_id': user.get_user_id(),
+    #     'message': 'text_message',
+    #     'random_id': 0
+    # }
+    # photos.getChatUploadServer
+    # vk_session.method(ages.setChatPhoto(file: https://www.google.com/search?sca_esv=450a9a9b983914d8&sca_upv=1&rlz=1C1GCEA_ruRU1100RU1101&sxsrf=ACQVn0-U8-gKv1azUBVkyH2aRSHqRDal9Q:1714567650434&q=%D1%81%D0%BC%D0%B0%D0%B9%D0%BB%D0%B8%D0%BA%D0%B8&uds=AMwkrPs4mDHqV7QfY9nYaKRHgvE905tikM6txI8mkOUGPhWhJsLuF_nSnUEilZFtiWCJGUwJEKm32eQLmEJnqO9FFrS48qNYm20L9xIUbEr7ZwrQuZE5RZm_Ep3cWEnhGrhohgJnb-vL4JSpcpcq7dw3UM8qSdlOAvVuTN4WgrpvI6yDXiYBS1qBST6gT8lxPlr8r61ETtz0kvCC0vgRwkbm4vbdGpraZMgZsY3HspZFAqg9iepF8Ir1qD9sLSq3l3vD6jjAvo0BY8pzJl71JsMo8YWjCUoqVvUuqW6ygY9ek5iqkEXN7QZn34JqLAthztP0MWelYlRR&udm=2&prmd=ivsnmbt&sa=X&ved=2ahUKEwiFj_2dvuyFAxV0FxAIHawqBPYQtKgLegQIDRAB&biw=2560&bih=1313&dpr=1#vhid=MyYr974ugWAmnM&vssid=mosaic')
 
 
 def check_user(user_id):
@@ -136,8 +194,12 @@ def check_user(user_id):
 
     return user
 
+def open_criteria(user: User):
+    user
+
 
 if __name__ == '__main__':
+    upload = VkUpload(vk_session)
     if realization == 'SQL':
         сheckDB = CheckDBSQL()
         repository = SQLRepository()
@@ -147,6 +209,7 @@ if __name__ == '__main__':
         for event in VkLongPoll(vk_session).listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
                 text = event.text.lower()
+                payload = event.extra_values.get('payload')
 
                 # Начало работы
                 if text == 'start':
@@ -158,31 +221,52 @@ if __name__ == '__main__':
                     users_list[event.user_id].set_id_msg_edit_anketa(message_id)
 
                 # Нажатие кнопок
-                elif event.extra_values.get('payload'):
-
-                    # Редактирование пунктов анкеты
-                    if json.loads(event.extra_values.get('payload')).get('action_edit'):
-                        str_arg = json.loads(event.extra_values.get('payload')).get('action_edit')
+                elif payload:
+                    payload = json.loads(payload)
+                    # Анкета
+                    if payload.get('action_edit_anketa'):
+                        str_arg = payload.get('action_edit')
                         send_ask_edit(users_list[event.user_id], str_arg)
 
                     # Сохранить анкету
-                    elif json.loads(event.extra_values.get('payload')).get('action_save'):
+                    elif payload.get('action_save_anketa'):
                         save_anketa(users_list[event.user_id])
+                        open_criteria(users_list[event.user_id])
 
-                    # Отмена текущего режима
-                    elif json.loads(event.extra_values.get('payload')).get('action_cancel'):
+                    # Отмена текущего действия
+                    elif payload.get('action_cancel'):
+                        action = payload.get('action_main_manu')
 
                         # Отмена редактирования пункта анкеты
-                        if json.loads(event.extra_values.get('payload')).get('action_cancel') == 'cancel_edit_anketa':
+                        if action == 'cancel_edit_anketa':
                             users_list[event.user_id].set_step(None)
                             message_id = handle_registration(users_list[event.user_id])
                             users_list[event.user_id].set_id_msg_edit_anketa(message_id)
 
-                    # Поиск пользователей
-                    elif json.loads(event.extra_values.get('payload')).get('action_find_users'):
-                        find_users(users_list[event.user_id])
+                    # Команды главного меню
+                    elif payload.get('action_main_manu'):
+                        action = payload.get('action_main_manu')
 
-                # Получение данных для текущего шага
+                        # Переход в главное меню
+                        if action == 'go_to_main_manu':
+                            main_menu(users_list[event.user_id])
+
+                        # Поиск пользователей
+                        elif action == 'find_users':
+                            find_users(upload, vk_session, users_list[event.user_id])
+
+                     # Просмотр текущего списка
+                    elif payload.get('action_view'):
+                        action = payload.get('action_view')
+                        # Переход вперед
+                        if action == 'go_to_next':
+                            view_next_card(upload, users_list[event.user_id])
+
+                        # Переход назад
+                        elif action == 'go_to_back':
+                            view_back_card(users_list[event.user_id])
+
+                # Получение данных для текущего шага анкета или критерии поиска
                 elif not users_list.get(event.user_id) is None and not users_list[event.user_id].get_step() is None:
                     set_param_anketa(users_list[event.user_id], text)
                     message_id = handle_registration(users_list[event.user_id])
