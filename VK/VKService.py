@@ -57,30 +57,54 @@ class VKService:
         response = requests.get(url, params={**criteria_dict})
         #users_list = vk_session.method('users.search', criteria_dict)
         if response.status_code == 200:
-            for item in response.json()['response']['items']:
-                if item['title'].lower() == text:
-                    city = item
-                    break
+            users_list = response.value.get('response').get('items')
+
+            #users_list =
+
             return users_list
         else:
             return None
 
 
-    # def users_photos(self, vk_session, user_id) -> Result:
-    #     url = 'https://api.vk.com/method/photos.get'
-    #     params = {'owner_id': user_id,
-    #               'extended': 1,
-    #               'album_id': 'profile',
-    #               'photo_sizes': 1}
-    #     response = requests.get(url, params={**self.params, **params})
-    #
-    #     if response.status_code == 200:
-    #         if response.json().get('error'):
-    #             return Result(False, response.json().get('error'), str(response.json().get('error')))
-    #         else:
-    #             return Result(True, response.json(), "")
-    #     else:
-    #         return Result(False, response.json(), response.json())
+    def add_photos(self, users_list) -> list:
+        """
+        Выполняет добавление информации о фото пользователей
+        :param users_list: список пользователей
+        :return: users_list дополненный список пользователей
+        """
+        for user in users_list:
+            user['photos'] = self.get_user_photo(user.get('id'))
+
+        return users_list
+
+    def get_user_photo(self, user_id):
+        result = self.vk_service.users_photos(user_id)
+        photo_list = []
+        photo_dict_likes = {}
+        if result.success:
+            try:
+                photo_items = result.value.get('response').get('items')
+                for item in photo_items:
+                    if not item.get('likes') is None:
+                        photo_dict_likes[item['sizes'][0]['url']] = item['likes']['user_likes']
+                    else:
+                        photo_dict_likes[item['sizes'][0]['url']] = 0
+
+                sorted(photo_dict_likes.items(), key=lambda x: x[1], reverse=True)
+            except Exception as e:
+                print(f'Ошибка в получании данных из результата - {str(e)}')
+        else:
+            print(f'Ошибка в результате запроса - {result.error}')
+
+        photo_list = [k for k in photo_dict_likes.keys()]
+
+        if len(photo_list) < 3:
+            photo_list
+        else:
+            photo_list[:3]
+
+        return photo_list
+
 
     def determine_age(self, bdate: str) -> int:
         birth_date = datetime.strptime(bdate, "%d.%m.%Y")
