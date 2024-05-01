@@ -55,15 +55,12 @@ class VKService:
 
         users_list = None
         response = requests.get(url, params={**criteria_dict})
-        #users_list = vk_session.method('users.search', criteria_dict)
         if response.status_code == 200:
-            users_list = response.value.get('response').get('items')
+            users_list = response.json().get('response').get('items')
+            users_list = self.add_photos(users_list)
 
-            #users_list =
+        return users_list
 
-            return users_list
-        else:
-            return None
 
 
     def add_photos(self, users_list) -> list:
