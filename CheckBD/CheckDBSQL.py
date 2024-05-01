@@ -82,7 +82,7 @@ class CheckDBSQL(ABCCheckDb):
             cursor.execute("""
                     CREATE TABLE IF NOT EXISTS cities(
                         id SERIAL PRIMARY KEY,
-                        city VARCHAR(50) NOT NULL
+                        name VARCHAR(50) NOT NULL
                     );
                     """)
 

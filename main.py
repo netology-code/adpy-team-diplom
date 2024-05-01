@@ -4,7 +4,10 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from dotenv import load_dotenv
 import os
 import VK.vk_massages as ms
+from CheckBD.ABCCheckDb import ABCCheckDb
 from CheckBD.CheckDBSQL import CheckDBSQL
+from Repository.ABCRepository import ABCRepository
+from Repository.SQLRepository import SQLRepository
 from User import User
 from VK.VKService import VKService
 
@@ -15,6 +18,9 @@ token_api=os.getenv(key='ACCESS_TOKEN_API')
 vk_session = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk_session)
 users_list = {}
+realization = os.getenv(key='REALIZATION')
+repository: ABCRepository
+сheckDB: ABCCheckDb
 
 
 def handle_start(user_id):
@@ -39,6 +45,11 @@ def handle_start(user_id):
         else:
             hello_massage_error = ms.get_hello_massage_error(user.get_user_id())
             send_message(hello_massage_error)
+    else:
+        # Уже есть в списке
+        message_id = handle_registration(users_list[event.user_id])
+        users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+
 
 
 def handle_registration(user: User):
@@ -95,7 +106,10 @@ def set_param_anketa(user: User, text: str):
 
 
 if __name__ == '__main__':
-    сheckDB = CheckDBSQL()
+    if realization == 'SQL':
+        сheckDB = CheckDBSQL()
+        repository = SQLRepository()
+
     if сheckDB.check_db():
         vk_srv = VKService()
         for event in VkLongPoll(vk_session).listen():
@@ -121,7 +135,11 @@ if __name__ == '__main__':
 
                     # Сохранить анкету
                     elif json.loads(event.extra_values.get('payload')).get('action_save'):
-                        print(users_list[event.user_id].to_dict())
+                        repository.add_user(users_list[event.user_id])
+                        vk_session.method('messages.delete',
+                                          dict(message_ids=users_list[event.user_id].get_id_msg_edit_anketa(),
+                                               delete_for_all=1))
+                        users_list[event.user_id].set_id_msg_edit_anketa(-1)
 
                     # Отмена текущего режима
                     elif json.loads(event.extra_values.get('payload')).get('action_cancel'):
