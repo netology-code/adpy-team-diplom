@@ -140,3 +140,30 @@ class SQLRepository(ABCRepository):
 
     def get_exceptions(self, user_id):
         pass
+
+    def get_user(self, user_id) -> User:
+
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+        with connect.cursor() as cursor:
+            sql = """SELECT users.first_name, users.last_name, users.age, users.gender_id , users.about_me,
+                        cities.id, cities.name FROM users 
+                        INNER JOIN cities ON users.city_id = cities.id
+                        WHERE users.id=%s;"""
+            cursor.execute(sql, (user_id,))
+            result = cursor.fetchone()
+            # Если пользователь есть, создадим экземпляр класса User
+            if not result is None:
+                user = User(user_id)
+                user.set_first_name(result[0])
+                user.set_last_name(result[1])
+                user.set_age(result[2])
+                user.set_gender(result[3])
+                user.set_about_me(result[4])
+                user.set_city({'id': result[5], 'title': result[6]})
+                return user
+
+            # Если пользователя нет
+            else:
+                return None

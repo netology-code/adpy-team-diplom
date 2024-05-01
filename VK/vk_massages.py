@@ -101,10 +101,12 @@ def get_edit_massage(user_id, str_arg):
 
 
 def get_main_menu_massage(user: User):
-    text_message = f'Регистрация закончена'
-    keyboard = VkKeyboard(one_time=True)
+    text_message = f'Главное меню'
+    keyboard = VkKeyboard(one_time=False)
     keyboard.add_button('Поиск', color=VkKeyboardColor.PRIMARY,
                         payload={"action_find_users": "find_users"})
+    keyboard.add_button('Анкета', color=VkKeyboardColor.PRIMARY,
+                        payload={"action_anketa": "anketa"})
     message = {
         'user_id': user.get_user_id(),
         'message': text_message,
@@ -112,4 +114,24 @@ def get_main_menu_massage(user: User):
         'keyboard': keyboard.get_keyboard()
     }
 
+    return message
+
+
+def get_message_invitation(user_id):
+    text_message = f'Для начала регистрации отправьте "start"'
+    message = {
+        'user_id': user_id,
+        'message': text_message,
+        'random_id': get_random_id()
+    }
+    return message
+
+
+def get_message_done_registration(user_id):
+    text_message = f'Регистрация закончена'
+    message = {
+        'user_id': user_id,
+        'message': text_message,
+        'random_id': get_random_id()
+    }
     return message

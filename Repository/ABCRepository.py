@@ -39,3 +39,7 @@ class ABCRepository(ABC):
     @abstractmethod
     def get_exceptions(self, user_id):
         pass
+
+    @abstractmethod
+    def get_user(self, user_id):
+        pass

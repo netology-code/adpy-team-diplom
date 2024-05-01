@@ -33,30 +33,38 @@ class VKService:
         else:
             return None
 
-    def users_search(self, vk_session, criteria_dict) -> dict:
+    def users_search(self, vk_session, criteria_dict, token) -> dict:
 
         """
         Выполняет get-запрос к vk api users.search с поиском пользователей
         :param criteria_dict: словарь критерий поиска
         :return: результат запроса в виде экземпляра класса Result
         """
-
+        url = 'https://api.vk.com/method/users.search'
         criteria_dict = {
             'sex': 1,
             'status': 1,
             'age_from': 20,
             'age_to': 45,
             'has_photo': 1,
-            'fields': 'about,sex'
+            'count': 100,
+            'access_token': token,
+            'fields': 'about,sex',
+            'v': '5.199'
         }
 
         users_list = None
-        try:
-            users_list = vk_session.method('users.search', criteria_dict)
-        except Exception as e:
-            print(e)
+        response = requests.get(url, params={**criteria_dict})
+        #users_list = vk_session.method('users.search', criteria_dict)
+        if response.status_code == 200:
+            for item in response.json()['response']['items']:
+                if item['title'].lower() == text:
+                    city = item
+                    break
+            return users_list
+        else:
+            return None
 
-        return users_list
 
     # def users_photos(self, vk_session, user_id) -> Result:
     #     url = 'https://api.vk.com/method/photos.get'

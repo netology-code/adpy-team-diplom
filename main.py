@@ -111,8 +111,30 @@ def save_anketa(user: User):
                       dict(message_ids=user.get_id_msg_edit_anketa(),
                            delete_for_all=1))
     user.set_id_msg_edit_anketa(-1)
+    message_done_registration = ms.get_message_done_registration(user.get_user_id())
+    send_message(message_done_registration)
+    main_menu(user)
+
+
+def main_menu(user: User):
     message_main_menu = ms.get_main_menu_massage(user)
     send_message(message_main_menu)
+
+
+def find_users(user: User):
+    users_list = vk_srv.users_search(vk_session, {}, token_api)
+    assa = 1
+
+
+def check_user(user_id):
+    user = repository.get_user(user_id)
+    if user is None:
+        message_invitation = ms.get_message_invitation(user_id)
+        send_message(message_invitation)
+    else:
+        main_menu(user)
+
+    return user
 
 
 if __name__ == '__main__':
@@ -135,7 +157,7 @@ if __name__ == '__main__':
                     message_id = handle_registration(users_list[event.user_id])
                     users_list[event.user_id].set_id_msg_edit_anketa(message_id)
 
-                # Нажатие inline кнопок
+                # Нажатие кнопок
                 elif event.extra_values.get('payload'):
 
                     # Редактирование пунктов анкеты
@@ -156,8 +178,17 @@ if __name__ == '__main__':
                             message_id = handle_registration(users_list[event.user_id])
                             users_list[event.user_id].set_id_msg_edit_anketa(message_id)
 
+                    # Поиск пользователей
+                    elif json.loads(event.extra_values.get('payload')).get('action_find_users'):
+                        find_users(users_list[event.user_id])
+
                 # Получение данных для текущего шага
-                elif not users_list[event.user_id].get_step() is None:
+                elif not users_list.get(event.user_id) is None and not users_list[event.user_id].get_step() is None:
                     set_param_anketa(users_list[event.user_id], text)
                     message_id = handle_registration(users_list[event.user_id])
                     users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+
+                # Просто сообщение от пользователя. Есть пользователь в базе или нет
+                else:
+                    if not event.user_id in users_list.keys():
+                        users_list[event.user_id] = check_user(event.user_id)

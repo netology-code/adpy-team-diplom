@@ -47,10 +47,10 @@ class User:
     def get_city(self) -> dict:
         return self.__city
 
-    def set_about_name(self, arg: str):
+    def set_about_me(self, arg: str):
         self.__about_me = arg
 
-    def get_about_name(self):
+    def get_about_me(self):
         return self.__about_me
 
     def set_id_msg_edit_anketa(self, arg: int):
