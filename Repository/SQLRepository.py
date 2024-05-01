@@ -14,24 +14,50 @@ class SQLRepository(ABCRepository):
                                         user=os.getenv(key='USER_NAME_DB'),
                                         password=os.getenv(key='USER_PASSWORD_DB'))
         with connect.cursor() as cursor:
-            #Проверим надичие города в базе
-            sql = """SELECT id FROM cities WHERE name=%s;"""
-            cursor.execute(sql, (user.get_city()['title'],))
+            #Проверим есть ли пользователь в базе
+            sql = """SELECT id FROM users WHERE id=%s;"""
+            cursor.execute(sql, (user.get_user_id(),))
             result = cursor.fetchone()
-            if result is None:
-                sql = """INSERT INTO cities(id, name)
-                            VALUES(%s, %s);"""
-                cursor.execute(sql, (user.get_city()['id'], user.get_city()['title'],))
+            #Если пользователь уже есть, то обновим данные
+            if not result is None:
+                sql = """UPDATE users SET first_name=%s,
+                                          last_name=%s, 
+                                          age=%s,
+                                          gender_id=%s,
+                                          city_id=%s,
+                                          about_me=%s                                            
+                        WHERE id=%s;"""
+                cursor.execute(sql, (user.get_first_name(),
+                                     user.get_last_name(),
+                                     user.get_age(),
+                                     user.get_gender(),
+                                     user.get_city()['id'],
+                                     user.get_about_name(),
+                                     user.get_user_id(),))
 
-            sql = """INSERT INTO users(id, first_name, last_name, age, gender_id, city_id, about_me)
-                                                 VALUES(%s, %s, %s, %s, %s, %s, %s);"""
-            cursor.execute(sql, (user.get_user_id(),
-                                 user.get_first_name(),
-                                 user.get_last_name(),
-                                 user.get_age(),
-                                 user.get_gender(),
-                                 user.get_city()['id'],
-                                 user.get_about_name()))
+                # "UPDATE table_name SET update_column_name=(%s)"
+                # " WHERE ref_column_id_value = (%s)",
+                # ("column_name", "value_you_want_to_update",));
+            #Если пользователя нет в базе - запишем
+            else:
+                #Проверим надичие города в базе
+                sql = """SELECT id FROM cities WHERE name=%s;"""
+                cursor.execute(sql, (user.get_city()['title'],))
+                result = cursor.fetchone()
+                if result is None:
+                    sql = """INSERT INTO cities(id, name)
+                                VALUES(%s, %s);"""
+                    cursor.execute(sql, (user.get_city()['id'], user.get_city()['title'],))
+
+                sql = """INSERT INTO users(id, first_name, last_name, age, gender_id, city_id, about_me)
+                                                     VALUES(%s, %s, %s, %s, %s, %s, %s);"""
+                cursor.execute(sql, (user.get_user_id(),
+                                     user.get_first_name(),
+                                     user.get_last_name(),
+                                     user.get_age(),
+                                     user.get_gender(),
+                                     user.get_city()['id'],
+                                     user.get_about_name()))
 
         connect.commit()
         connect.close()

@@ -98,3 +98,18 @@ def get_edit_massage(user_id, str_arg):
     }
 
     return message
+
+
+def get_main_menu_massage(user: User):
+    text_message = f'Регистрация закончена'
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Поиск', color=VkKeyboardColor.PRIMARY,
+                        payload={"action_find_users": "find_users"})
+    message = {
+        'user_id': user.get_user_id(),
+        'message': text_message,
+        'random_id': get_random_id(),
+        'keyboard': keyboard.get_keyboard()
+    }
+
+    return message

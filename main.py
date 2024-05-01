@@ -105,6 +105,16 @@ def set_param_anketa(user: User, text: str):
         user.set_city(city)
 
 
+def save_anketa(user: User):
+    repository.add_user(user)
+    vk_session.method('messages.delete',
+                      dict(message_ids=user.get_id_msg_edit_anketa(),
+                           delete_for_all=1))
+    user.set_id_msg_edit_anketa(-1)
+    message_main_menu = ms.get_main_menu_massage(user)
+    send_message(message_main_menu)
+
+
 if __name__ == '__main__':
     if realization == 'SQL':
         сheckDB = CheckDBSQL()
@@ -135,11 +145,7 @@ if __name__ == '__main__':
 
                     # Сохранить анкету
                     elif json.loads(event.extra_values.get('payload')).get('action_save'):
-                        repository.add_user(users_list[event.user_id])
-                        vk_session.method('messages.delete',
-                                          dict(message_ids=users_list[event.user_id].get_id_msg_edit_anketa(),
-                                               delete_for_all=1))
-                        users_list[event.user_id].set_id_msg_edit_anketa(-1)
+                        save_anketa(users_list[event.user_id])
 
                     # Отмена текущего режима
                     elif json.loads(event.extra_values.get('payload')).get('action_cancel'):
