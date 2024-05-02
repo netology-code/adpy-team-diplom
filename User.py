@@ -12,7 +12,7 @@ class User:
         self.__step = None
         self.__index_view = -1
         self.__list_cards = None
-        self.__list_cards = None
+        self.__criteria = None
 
     def get_user_id(self):
         return self.__id
@@ -82,6 +82,19 @@ class User:
 
     def get_card(self):
         return self.__list_cards[self.__index_view]
+
+    def set_criteria(self, arg):
+        self.__criteria = arg
+
+    def get_criteria(self):
+        return self.__criteria
+
+    def delete_card(self):
+        self.__list_cards.pop(self.__index_view)
+        self.__index_view = self.__index_view - 1
+
+    def get_size_list_cards(self):
+        return len(self.__list_cards)
 
     def to_dict(self):
         return {

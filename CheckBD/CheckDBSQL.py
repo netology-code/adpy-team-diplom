@@ -104,11 +104,13 @@ class CheckDBSQL(ABCCheckDb):
                         CREATE TABLE IF NOT EXISTS criteria(
                             id SERIAL PRIMARY KEY,
                             user_id int NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES genders(id),
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                             gender_id int NOT NULL,
-                            age int NOT NULL,
+                            status int NOT NULL,
+                            age_from int NOT NULL,
+                            age_to int NOT NULL,
                             city_id int NOT NULL,
-                            photo_bool int  NOT NULL
+                            has_photo int NOT NULL
                         );
                         """)
 
@@ -123,9 +125,9 @@ class CheckDBSQL(ABCCheckDb):
                                 gender_id int NOT NULL,
                                 FOREIGN KEY (gender_id) REFERENCES genders(id),
                                 profile VARCHAR(50) NOT NULL,
-                                photo1 VARCHAR(50),
-                                photo2 VARCHAR(50),
-                                photo3 VARCHAR(50),
+                                photo1 VARCHAR(1000),
+                                photo2 VARCHAR(1000),
+                                photo3 VARCHAR(1000),
                                 city_id int NOT NULL,
                                 FOREIGN KEY (city_id) REFERENCES cities(id)
                             );

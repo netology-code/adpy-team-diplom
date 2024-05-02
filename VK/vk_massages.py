@@ -5,6 +5,7 @@ from vk_api import VkUpload
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
+from Repository.CardFind import CardFind
 from User import User
 
 edit_dict = {
@@ -109,8 +110,22 @@ def get_main_menu_massage(user: User):
     keyboard = VkKeyboard(one_time=False)
     keyboard.add_button('Поиск', color=VkKeyboardColor.PRIMARY,
                         payload={"action_main_manu": "find_users"})
-    keyboard.add_button('Анкета', color=VkKeyboardColor.PRIMARY,
-                        payload={"action_main_manu": "anketa"})
+
+    # keyboard.add_line()
+    # keyboard.add_button('Критерии поиска', color=VkKeyboardColor.PRIMARY,
+    #                     payload={"action_main_manu": "criteria"})
+
+
+    keyboard.add_line()
+    keyboard.add_button('Избранные', color=VkKeyboardColor.PRIMARY,
+                        payload={"action_main_manu": "go_to_favorites"})
+
+    # keyboard.add_line()
+    # keyboard.add_button('В черный список', color=VkKeyboardColor.PRIMARY,
+    #                     payload={"action_view": "go_to_exception"})
+
+    # keyboard.add_button('Анкета', color=VkKeyboardColor.PRIMARY,
+    #                     payload={"action_main_manu": "anketa"})
     message = {
         'user_id': user.get_user_id(),
         'message': text_message,
@@ -141,26 +156,38 @@ def get_message_done_registration(user_id):
     return message
 
 
-def get_message_view(attachment, card: dict, user: User):
-    text_message = f'{card["first_name"]} {card["last_name"]}'
+def get_message_view(attachment, card, user: User):
+    profile_str = 'https://vk.com/id' + str(card.id)
+    text_message = f'{card.first_name} {card.last_name}\n' \
+                   f'{profile_str}'
 
     keyboard = VkKeyboard(one_time=False)
 
-    if user.get_index_view() > 0:
-        keyboard.add_button('Назад', color=VkKeyboardColor.PRIMARY,
-                            payload={"action_view": "go_to_back"})
+    if user.get_index_view() > -1:
+        if user.get_index_view() > 0:
+            keyboard.add_button('Назад', color=VkKeyboardColor.PRIMARY,
+                                payload={"action_view": "go_to_back"})
 
-    keyboard.add_button('Вперед', color=VkKeyboardColor.PRIMARY,
-                        payload={"action_view": "go_to_next"})
+        if user.get_index_view() < user.get_size_list_cards()-1:
+            keyboard.add_button('Вперед', color=VkKeyboardColor.PRIMARY,
+                                payload={"action_view": "go_to_next"})
+
+    if isinstance(card, CardFind):
+        keyboard.add_line()
+        keyboard.add_button('Добавить в избранные', color=VkKeyboardColor.PRIMARY,
+                            payload={"action_view": "add_favorites"})
+    else:
+        if user.get_size_list_cards() > 1:
+            keyboard.add_line()
+
+        keyboard.add_button('Удалить из списка', color=VkKeyboardColor.PRIMARY,
+                            payload={"action_view": "delete_from_list"})
+
+    # keyboard.add_line()
+    # keyboard.add_button('В черный список', color=VkKeyboardColor.PRIMARY,
+    #                     payload={"action_view": "go_to_exception"})
 
     keyboard.add_line()
-    keyboard.add_button('В избранные', color=VkKeyboardColor.PRIMARY,
-                        payload={"action_view": "go_to_favorites"})
-
-    keyboard.add_line()
-    keyboard.add_button('В черный список', color=VkKeyboardColor.PRIMARY,
-                        payload={"action_view": "go_to_exception"})
-
     keyboard.add_button('Главное меню', color=VkKeyboardColor.PRIMARY,
                         payload={"action_main_manu": "go_to_main_manu"})
 
@@ -195,4 +222,42 @@ def get_message_error_search(user_id):
         'message': text_message,
         'random_id': get_random_id()
     }
+    return message
+
+
+def get_message_criteria(user: User):
+    text_message = f'Критерии поиска:\n' \
+                   f'новое значение - нажать кнопку\n'
+    criteria = user.get_criteria()
+    settings = dict(one_time=False, inline=True)
+    keyboard = VkKeyboard(**settings)
+    keyboard.add_button(label='Пол: ' + "женщина" if criteria['gender_id'] == 1 else "мужчина", color=VkKeyboardColor.SECONDARY,
+                        payload={"action_edit_criteria": "gender_id"})
+    keyboard.add_line()
+    keyboard.add_button(label='Статус: ' + "не женат (не замужем)" if criteria['status'] == 1 else "в активном поиске",
+                        color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "status"})
+    keyboard.add_line()
+    keyboard.add_button(label='Возраст с: ' + str(criteria['age_from']), color=VkKeyboardColor.SECONDARY,
+                        payload={"action_edit_criteria": "age_from"})
+    keyboard.add_line()
+    keyboard.add_button(label='Возраст по: ' + str(criteria['age_to']), color=VkKeyboardColor.SECONDARY,
+                        payload={"action_edit_criteria": "age_to"})
+    keyboard.add_line()
+    keyboard.add_button(label='Город: ' + criteria['city_name'], color=VkKeyboardColor.SECONDARY,
+                        payload={"action_edit_criteria": "city"})
+    keyboard.add_line()
+    keyboard.add_button(label='Есть фото' + "да" if criteria['has_photo'] == 1 else "нет", color=VkKeyboardColor.SECONDARY,
+                        payload={"action_edit_criteria": "has_photo"})
+    keyboard.add_line()
+    keyboard.add_button(label='Сохранить критерии' + "да" if criteria['has_photo'] == 1 else "нет", color=VkKeyboardColor.POSITIVE,
+                        payload={"action_edit_criteria": "save_criteria"})
+
+    message = {
+        'user_id': user.get_user_id(),
+        'message': text_message,
+        'random_id': get_random_id(),
+        'keyboard': keyboard.get_keyboard(),
+        'peer_ids': user.get_user_id()
+    }
+
     return message

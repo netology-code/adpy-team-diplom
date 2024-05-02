@@ -17,19 +17,11 @@ class ABCRepository(ABC):
         pass
 
     @abstractmethod
-    def change_favorites(self, user_vk):
+    def delete_favorites(self, user_id, profile):
         pass
 
     @abstractmethod
-    def change_exceptions(self, user_vk):
-        pass
-
-    @abstractmethod
-    def delete_favorites(self, user_vk):
-        pass
-
-    @abstractmethod
-    def delete_exceptions(self, user_vk):
+    def delete_exceptions(self, user_id, profile):
         pass
 
     @abstractmethod
@@ -42,4 +34,8 @@ class ABCRepository(ABC):
 
     @abstractmethod
     def get_user(self, user_id):
+        pass
+
+    @abstractmethod
+    def open_criteria(self, user_id):
         pass

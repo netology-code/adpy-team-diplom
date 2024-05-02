@@ -4,6 +4,8 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 from Repository.ABCRepository import ABCRepository
 import os
+
+from Repository.CardFavorites import CardFavorites
 from User import User
 
 
@@ -32,12 +34,9 @@ class SQLRepository(ABCRepository):
                                      user.get_age(),
                                      user.get_gender(),
                                      user.get_city()['id'],
-                                     user.get_about_name(),
+                                     user.get_about_me(),
                                      user.get_user_id(),))
 
-                # "UPDATE table_name SET update_column_name=(%s)"
-                # " WHERE ref_column_id_value = (%s)",
-                # ("column_name", "value_you_want_to_update",));
             #Если пользователя нет в базе - запишем
             else:
                 #Проверим надичие города в базе
@@ -57,40 +56,60 @@ class SQLRepository(ABCRepository):
                                      user.get_age(),
                                      user.get_gender(),
                                      user.get_city()['id'],
-                                     user.get_about_name()))
+                                     user.get_about_me()))
+
+                sql = """INSERT INTO criteria(user_id, gender_id, status, age_from, age_to, city_id, has_photo)
+                                                                     VALUES(%s, %s, %s, %s, %s, %s, %s);"""
+
+                cursor.execute(sql, (user.get_user_id(),
+                                     user.get_gender(),
+                                     1,
+                                     user.get_age() - 5,
+                                     user.get_age() + 5,
+                                     user.get_city()['id'],
+                                     1))
 
         connect.commit()
         connect.close()
 
-    def add_favorites(self, user_vk):
-        """
-            Получение списка избранных vk_пользователей
+    def add_favorites(self, user: User):
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
 
-            Args:
-                user_id (int): VK-идентификатор пользователя
+        with connect.cursor() as cursor:
+            sql = """INSERT INTO favorites(user_id, first_name, last_name, age, gender_id, profile, 
+                                    photo1, photo2, photo3, city_id)
+                                    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+            card = user.get_card()
+            photos = card.get('photos')
+            photo1 = ''
+            photo2 = ''
+            photo3 = ''
+            if len(photos) == 3:
+                photo1 = photos[0]
+                photo2 = photos[1]
+                photo3 = photos[2]
+            elif len(photos) == 2:
+                photo1 = photos[0]
+                photo2 = photos[1]
+            elif len(photos) == 1:
+                photo1 = photos[0]
 
-            Returns:
-                list_favorites (list): список пользователей-словарей
-            """
-        # with self.connect.cursor() as cursor:
-        #     select_dict = []
-        #     data = []
-        #
-        #     select_dict.append('user_id=%s')
-        #     data.append(str(user_id))
-        #
-        #     select_stmt = ("SELECT first_name, last_name, age, genders.gender, profile, "
-        #                    "photo1, photo2, photo3, cities.city"
-        #                    " FROM favorites "
-        #                    " INNER JOIN genders"
-        #                    " ON favorites.user_id = genders.id"
-        #                    " INNER JOIN cities"
-        #                    " ON favorites.city_id = cities.id"
-        #                    " WHERE user_id=%s")
-        #
-        #     cursor.execute(select_stmt, tuple(data))
-        list_favorites = []
-        return list_favorites
+
+            cursor.execute(sql, (str(user.get_user_id()),
+                                 card['first_name'],
+                                 card['last_name'],
+                                 0,
+                                 card['sex'],
+                                 'https://vk.com/id' + str(card['id']),
+                                 photo1,
+                                 photo2,
+                                 photo3,
+                                 card['city']['id']))
+
+        connect.commit()
+        connect.close()
 
     def add_exceptions(self, user_vk):
         """
@@ -129,14 +148,59 @@ class SQLRepository(ABCRepository):
     def change_exceptions(self, user_vk):
         pass
 
-    def delete_favorites(self, user_vk):
-        pass
+    def delete_favorites(self, user_id, profile):
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+        with connect.cursor() as cursor:
+            sql = """DELETE FROM favorites WHERE user_id=%s and profile=%s;"""
+            cursor.execute(sql, (user_id, profile))
 
-    def delete_exceptions(self, user_vk):
-        pass
+        connect.commit()
+        connect.close()
 
-    def get_favorites(self, user_id):
-        pass
+    def delete_exceptions(self, user_id, profile):
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+        with connect.cursor() as cursor:
+            sql = """DELETE FROM exceptions WHERE user_id=%s and profile=%s;"""
+            cursor.execute(sql, (user_id, profile))
+
+        connect.commit()
+        connect.close()
+
+    def get_favorites(self, user_id, token):
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+        with connect.cursor() as cursor:
+            sql = """SELECT favorites.user_id, favorites.first_name, favorites.last_name, favorites.age, 
+                        favorites.gender_id, favorites.profile, favorites.photo1, favorites.photo2, favorites.photo3, 
+                        cities.id, cities.name 
+                        FROM favorites 
+                        INNER JOIN cities ON favorites.city_id = cities.id
+                        WHERE favorites.user_id=%s;"""
+            cursor.execute(sql, (user_id,))
+            result = cursor.fetchall()
+            card_list = []
+            for item in result:
+                card = CardFavorites()
+                card.id = item[0]
+                card.first_name = item[1]
+                card.last_name = item[2]
+                card.age = item[3]
+                card.gender_id = item[4]
+                card.profile = item[5]
+                card.photos = [item[6], item[7], item[8]]
+                card.city_id = item[9]
+                card.city_name = item[10]
+                card_list.append(card)
+
+            if len(card_list) > 0:
+                return card_list
+            else:
+                return None
 
     def get_exceptions(self, user_id):
         pass
@@ -162,8 +226,38 @@ class SQLRepository(ABCRepository):
                 user.set_gender(result[3])
                 user.set_about_me(result[4])
                 user.set_city({'id': result[5], 'title': result[6]})
+
+                criteria = self.open_criteria(user_id)
+                user.set_criteria(criteria)
                 return user
 
             # Если пользователя нет
             else:
                 return None
+
+
+    def open_criteria(self, user_id):
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+
+        with connect.cursor() as cursor:
+            sql = """SELECT gender_id, status, age_from, age_to, city_id, cities.name, has_photo
+                        FROM criteria
+                        INNER JOIN cities ON criteria.city_id = cities.id
+                        WHERE user_id=%s;"""
+            cursor.execute(sql, (user_id,))
+            result = cursor.fetchone()
+            if not result is None:
+                return {'gender_id': 1 if result[0] == 2 else 1, 'status': result[1], 'age_from': result[2], 'age_to': result[3],
+                        'city_id': result[4], 'city_name': result[5], 'has_photo': result[6]}
+            else:
+                return {
+                    'gender_id': 0,
+                    'status': 0,
+                    'age_from': 0,
+                    'age_to': 0,
+                    'city_id': 0,
+                    'city_name': '',
+                    'has_photo': 0
+                }

@@ -11,6 +11,8 @@ import VK.vk_massages as ms
 from CheckBD.ABCCheckDb import ABCCheckDb
 from CheckBD.CheckDBSQL import CheckDBSQL
 from Repository.ABCRepository import ABCRepository
+from Repository.CardExceptions import CardExceptions
+from Repository.CardFavorites import CardFavorites
 from Repository.SQLRepository import SQLRepository
 from User import User
 from VK.VKService import VKService
@@ -69,7 +71,7 @@ def handle_registration(user: User):
     return send_message(message_registration)
 
 
-def send_ask_edit(user: User, str_arg):
+def send_ask_edit_anketa(user: User, str_arg):
     """
     Отправка предложения заполнить значение анкеты
     и установка текущего шага для редактирования анкеты пользователя
@@ -131,6 +133,7 @@ def main_menu(user: User):
     message_main_menu = ms.get_main_menu_massage(user)
     send_message(message_main_menu)
 
+
 def upload_photo(upload, url):
     img = requests.get(url).content
     f = BytesIO(img)
@@ -143,45 +146,52 @@ def upload_photo(upload, url):
 
     return {'owner_id': owner_id, 'photo_id': photo_id, 'access_key': access_key}
 
-def find_users(upload, vk_session, user: User):
-    list_cards = vk_srv.users_search({}, token_api)
+
+def find_users(upload, user: User, vk_srv, token):
+    list_cards = vk_srv.users_search(user.get_criteria(), token_api)
     if not list_cards is None:
         user.set_list_cards(list_cards)
         user.set_index_view(-1)
-
-
-        view_next_card(upload, user)
+        view_next_card(upload, user, vk_srv, token)
     else:
         message_error_search = ms.get_message_error_search(user.get_user_id())
         send_message(message_error_search)
 
 
-def view_next_card(upload, user):
-    next_index = user.get_index_view()
-    next_index = next_index + 1
-    user.set_index_view(next_index)
+def view_next_card(upload, user: User, vk_srv, token):
+    if user.get_size_list_cards() > 0:
+        next_index = user.get_index_view()
+        next_index = next_index + 1
+        if next_index == user.get_size_list_cards():
+            next_index = next_index - 1
+        user.set_index_view(next_index)
 
-    f = user.get_list_cards()[next_index]['photos'][0]
+        photos = user.get_list_cards()[next_index].photos
+        attachment = []
+        for photo in photos:
+            photo_struct = upload_photo(upload, photo)
+            attachment.append(f'photo{photo_struct["owner_id"]}_{photo_struct["photo_id"]}_{photo_struct["access_key"]}')
 
-    photo1 = upload_photo(upload, f)
-    attachment = f'photo{photo1["owner_id"]}_{photo1["photo_id"]}_{photo1["access_key"]}'
-    message_view = ms.get_message_view(attachment, user.get_card(), user)
-    send_message(message_view)
-
+        message_view = ms.get_message_view(','.join(attachment), user.get_card(), user)
+        send_message(message_view)
+        if user.get_size_list_cards()-1 > next_index and not user.get_list_cards()[next_index+1].photos:
+            vk_srv.add_photos(user.get_list_cards()[next_index+1], token)
+    else:
+        main_menu(user)
 
 def view_back_card(user):
     next_index = user.get_index_view()
     next_index = next_index - 1
     user.set_index_view(next_index)
-    message_view = ms.get_message_view(user.get_card(), user)
+
+    photos = user.get_list_cards()[next_index].photos
+    attachment = []
+    for photo in photos:
+        photo_struct = upload_photo(upload, photo)
+        attachment.append(f'photo{photo_struct["owner_id"]}_{photo_struct["photo_id"]}_{photo_struct["access_key"]}')
+
+    message_view = ms.get_message_view(','.join(attachment), user.get_card(), user)
     send_message(message_view)
-    # message = {
-    #     'user_id': user.get_user_id(),
-    #     'message': 'text_message',
-    #     'random_id': 0
-    # }
-    # photos.getChatUploadServer
-    # vk_session.method(ages.setChatPhoto(file: https://www.google.com/search?sca_esv=450a9a9b983914d8&sca_upv=1&rlz=1C1GCEA_ruRU1100RU1101&sxsrf=ACQVn0-U8-gKv1azUBVkyH2aRSHqRDal9Q:1714567650434&q=%D1%81%D0%BC%D0%B0%D0%B9%D0%BB%D0%B8%D0%BA%D0%B8&uds=AMwkrPs4mDHqV7QfY9nYaKRHgvE905tikM6txI8mkOUGPhWhJsLuF_nSnUEilZFtiWCJGUwJEKm32eQLmEJnqO9FFrS48qNYm20L9xIUbEr7ZwrQuZE5RZm_Ep3cWEnhGrhohgJnb-vL4JSpcpcq7dw3UM8qSdlOAvVuTN4WgrpvI6yDXiYBS1qBST6gT8lxPlr8r61ETtz0kvCC0vgRwkbm4vbdGpraZMgZsY3HspZFAqg9iepF8Ir1qD9sLSq3l3vD6jjAvo0BY8pzJl71JsMo8YWjCUoqVvUuqW6ygY9ek5iqkEXN7QZn34JqLAthztP0MWelYlRR&udm=2&prmd=ivsnmbt&sa=X&ved=2ahUKEwiFj_2dvuyFAxV0FxAIHawqBPYQtKgLegQIDRAB&biw=2560&bih=1313&dpr=1#vhid=MyYr974ugWAmnM&vssid=mosaic')
 
 
 def check_user(user_id):
@@ -194,8 +204,44 @@ def check_user(user_id):
 
     return user
 
+
 def open_criteria(user: User):
-    user
+    criteria_dict = repository.open_criteria(user.get_user_id())
+    user.set_criteria(criteria_dict)
+    #message_criteria = ms.get_message_criteria(user)
+    #send_message(message_criteria)
+
+
+def send_ask_edit_criteria(user, str_arg):
+    user.set_step(str_arg)
+    message_edit = ms.get_edit_massage(user.get_user_id(), str_arg)
+    send_message(message_edit)
+
+
+def add_favorites(repository, user: User):
+    repository.add_favorites(user)
+
+
+def go_to_favorites(upload, user: User, repository, token_api):
+    list_cards = repository.get_favorites(user.get_user_id(), token_api)
+    if not list_cards is None:
+        user.set_list_cards(list_cards)
+        user.set_index_view(-1)
+        view_next_card(upload, user, vk_srv, token)
+    else:
+        message_error_search = ms.get_message_error_search(user.get_user_id())
+        send_message(message_error_search)
+
+
+def delete_from_list(user: User, repository):
+    if len(user.get_list_cards()) > 0:
+        if isinstance(user.get_list_cards()[0], CardFavorites):
+            repository.delete_favorites(user.get_user_id(), user.get_card().profile)
+        elif isinstance(user.get_list_cards()[0], CardExceptions):
+            repository.delete_exceptions(user.get_user_id(), user.get_card().profile)
+
+    user.delete_card()
+    view_next_card(upload, user, vk_srv, token)
 
 
 if __name__ == '__main__':
@@ -203,6 +249,7 @@ if __name__ == '__main__':
     if realization == 'SQL':
         сheckDB = CheckDBSQL()
         repository = SQLRepository()
+
 
     if сheckDB.check_db():
         vk_srv = VKService()
@@ -225,8 +272,13 @@ if __name__ == '__main__':
                     payload = json.loads(payload)
                     # Анкета
                     if payload.get('action_edit_anketa'):
-                        str_arg = payload.get('action_edit')
-                        send_ask_edit(users_list[event.user_id], str_arg)
+                        str_arg = payload.get('action_edit_anketa')
+                        send_ask_edit_anketa(users_list[event.user_id], str_arg)
+
+                    # # Критерии поиска
+                    # elif payload.get('action_edit_criteria'):
+                    #     str_arg = payload.get('action_edit_criteria')
+                    #     send_ask_edit_criteria(users_list[event.user_id], str_arg)
 
                     # Сохранить анкету
                     elif payload.get('action_save_anketa'):
@@ -253,18 +305,31 @@ if __name__ == '__main__':
 
                         # Поиск пользователей
                         elif action == 'find_users':
-                            find_users(upload, vk_session, users_list[event.user_id])
+                            find_users(upload, users_list[event.user_id], vk_srv, token_api)
+
+                        # Открыть список избранных
+                        elif action == 'go_to_favorites':
+                            go_to_favorites(upload, users_list[event.user_id], repository, token_api)
+                            
 
                      # Просмотр текущего списка
                     elif payload.get('action_view'):
                         action = payload.get('action_view')
                         # Переход вперед
                         if action == 'go_to_next':
-                            view_next_card(upload, users_list[event.user_id])
+                            view_next_card(upload, users_list[event.user_id], vk_srv, token_api)
 
                         # Переход назад
                         elif action == 'go_to_back':
                             view_back_card(users_list[event.user_id])
+
+                        # Переход назад
+                        elif action == 'add_favorites':
+                            add_favorites(repository, users_list[event.user_id])
+
+                        # Открыть список избранных
+                        elif action == 'delete_from_list':
+                            delete_from_list(users_list[event.user_id], repository)
 
                 # Получение данных для текущего шага анкета или критерии поиска
                 elif not users_list.get(event.user_id) is None and not users_list[event.user_id].get_step() is None:
@@ -275,4 +340,6 @@ if __name__ == '__main__':
                 # Просто сообщение от пользователя. Есть пользователь в базе или нет
                 else:
                     if not event.user_id in users_list.keys():
-                        users_list[event.user_id] = check_user(event.user_id)
+                        user = check_user(event.user_id)
+                        if user:
+                            users_list[event.user_id] = user

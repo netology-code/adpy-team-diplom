@@ -3,7 +3,9 @@ from datetime import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 
+from Repository.CardFind import CardFind
 from Result import Result
+from User import User
 
 
 class VKService:
@@ -33,7 +35,7 @@ class VKService:
         else:
             return None
 
-    def users_search(self, criteria_dict, token) -> dict:
+    def users_search(self, criteria, token) -> dict:
 
         """
         Выполняет get-запрос к vk api users.search с поиском пользователей
@@ -42,22 +44,30 @@ class VKService:
         """
         url = 'https://api.vk.com/method/users.search'
         criteria_dict = {
-            'sex': 1,
-            'status': 1,
-            'age_from': 20,
-            'age_to': 45,
-            'has_photo': 1,
+            'sex': criteria['gender_id'],
+            'status': criteria['status'],
+            'age_from': criteria['age_from'],
+            'age_to': criteria['age_to'],
+            'has_photo': criteria['has_photo'],
+            'city': criteria['city_id'],
             'count': 100,
             'access_token': token,
-            'fields': 'about,sex',
+            'fields': 'city, bdate, sex',
             'v': '5.199'
         }
 
         response = requests.get(url, params={**criteria_dict})
         if response.status_code == 200:
-            users_list = response.json().get('response').get('items')
-            users_list = self.add_photos(users_list, token)
-            if len(users_list) != 0:
+            users_list = []
+            items = response.json().get('response').get('items')
+            for item in items:
+                temp = CardFind(item)
+                if item.get('bdate'):
+                    temp.age = self.determine_age(item.get('bdate'))
+                users_list.append(temp)
+
+            if len(users_list) > 0:
+                self.add_photos(users_list[0], token)
                 return users_list
             else:
                 return None
@@ -65,20 +75,18 @@ class VKService:
             return None
 
 
-    def add_photos(self, users_list, token) -> list:
+    def add_photos(self, card, token) -> list:
         """
         Выполняет добавление информации о фото пользователей
         :param users_list: список пользователей
         :return: users_list дополненный список пользователей
         """
-        for user in users_list:
-            user['photos'] = self.get_user_photo(user.get('id'), token)
+        card.photos = self.get_user_photo(card.id, token)
+        return card
 
-        return users_list
 
     def get_user_photo(self, user_id, token):
         result = self.users_photos(user_id, token)
-        photo_list = []
         photo_dict_likes = {}
         if result.success:
             try:
@@ -98,11 +106,9 @@ class VKService:
         photo_list = [k for k in photo_dict_likes.keys()]
 
         if len(photo_list) < 3:
-            photo_list
+            return photo_list
         else:
-            photo_list[:3]
-
-        return photo_list
+            return photo_list[:3]
 
     def users_photos(self, user_id, token) -> Result:
         url = 'https://api.vk.com/method/photos.get'
