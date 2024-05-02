@@ -7,12 +7,14 @@ from vk_api import VkUpload
 from vk_api.longpoll import VkLongPoll, VkEventType
 from dotenv import load_dotenv
 import os
-import VK.vk_massages as ms
+import VK.vk_messages as ms
 from CheckBD.ABCCheckDb import ABCCheckDb
+from CheckBD.CheckDBORM import CheckDBORM
 from CheckBD.CheckDBSQL import CheckDBSQL
 from Repository.ABCRepository import ABCRepository
 from Repository.CardExceptions import CardExceptions
 from Repository.CardFavorites import CardFavorites
+from Repository.ORMRepository import ORMRepository
 from Repository.SQLRepository import SQLRepository
 from User import User
 from VK.VKService import VKService
@@ -46,16 +48,16 @@ def handle_start(user_id):
             user.set_gender(users_info['sex'])
             if users_info.get('bdate'):
                user.set_age(vk_srv.determine_age(users_info['bdate']))
-            user.set_city(users_info['city'])
-            hello_message = ms.get_hello_massage(user.get_user_id(), user.get_first_name())
+            user.set_city({'id': users_info['city']['id'], 'name': users_info['city']['title']})
+            hello_message = ms.get_hello_message(user.get_user_id(), user.get_first_name())
             send_message(hello_message)
         else:
-            hello_massage_error = ms.get_hello_massage_error(user.get_user_id())
-            send_message(hello_massage_error)
+            hello_message_error = ms.get_hello_mmessage_error(user.get_user_id())
+            send_message(hello_message_error)
     else:
         # Уже есть в списке
         message_id = handle_registration(users_list[event.user_id])
-        users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+        users_list[event.user_id].set_id_msg_edit_id(message_id)
 
 
 
@@ -65,9 +67,9 @@ def handle_registration(user: User):
     :param user: параметры пользователя
     :return: id сообщения при отправке
     """
-    if user.get_id_msg_edit_anketa() > -1:
-        vk_session.method('messages.delete', {'message_ids': user.get_id_msg_edit_anketa(), 'delete_for_all': 1})
-    message_registration = ms.get_registration_massage(user)
+    if user.get_id_msg_edit_id() > -1:
+        vk_session.method('messages.delete', {'message_ids': user.get_id_msg_edit_id(), 'delete_for_all': 1})
+    message_registration = ms.get_registration_message(user)
     return send_message(message_registration)
 
 
@@ -78,8 +80,8 @@ def send_ask_edit_anketa(user: User, str_arg):
     :param user: параметры пользователя
     :param str_arg: шаг
     """
-    user.set_step(str_arg)
-    message_edit = ms.get_edit_massage(user.get_user_id(), str_arg)
+    user.set_step('anketa_'+str_arg)
+    message_edit = ms.get_edit_message(user.get_user_id(), str_arg)
     send_message(message_edit)
 
 
@@ -91,46 +93,58 @@ def send_message(message):
     return vk_session.method('messages.send', message)
 
 
-def set_param_anketa(user: User, text: str):
+def set_param(user: User, text: str):
     """
     Запись текущего пункта анкеты в класс User
     :param user: параметры пользователя
     :param text: значение параметра
     """
-    if user.get_step() == 'first_name':
+    if user.get_step() == 'anketa_first_name':
         user.set_first_name(text)
-    elif user.get_step() == 'last_name':
+    elif user.get_step() == 'anketa_last_name':
         user.set_last_name(text)
-    elif user.get_step() == 'age':
-        user.set_age(int(text))
-    elif user.get_step() == 'age':
-        user.set_age(int(text))
-    elif user.get_step() == 'gender':
+    elif user.get_step() == 'anketa_age':
+        user.set_age(text)
+    elif user.get_step() == 'anketa_gender':
         user.set_gender(int(text))
-    elif user.get_step() == 'city':
+    elif user.get_step() == 'anketa_city':
         city = vk_srv.get_city_by_name(token=token_api, text=text)
         user.set_city(city)
+    else:
+        if user.get_step() == 'criteria_gender':
+            user.get_criteria().gender_id = int(text)
+        elif user.get_step() == 'criteria_age_from':
+            user.get_criteria().age_from = text
+        elif user.get_step() == 'criteria_age_to':
+            user.get_criteria().age_to = text
+        elif user.get_step() == 'criteria_status':
+            user.get_criteria().status = int(text)
+        elif user.get_step() == 'criteria_has_photo':
+            user.get_criteria().has_photo = int(text)
+        elif user.get_step() == 'criteria_city':
+            city = vk_srv.get_city_by_name(token=token_api, text=text)
+            user.get_criteria().city = city
 
 
 def save_anketa(user: User):
     repository.add_user(user)
     vk_session.method('messages.delete',
-                      dict(message_ids=user.get_id_msg_edit_anketa(),
+                      dict(message_ids=user.get_id_msg_edit_id(),
                            delete_for_all=1))
-    user.set_id_msg_edit_anketa(-1)
-    message_done_registration = ms.get_message_done_registration(user.get_user_id())
-    send_message(message_done_registration)
-    main_menu(user)
+    user.set_id_msg_edit_id(-1)
+    # message_done_registration = ms.get_message_done_registration(user.get_user_id())
+    # send_message(message_done_registration)
+    #main_menu(user)
 
 
 def main_menu(user: User):
     # Очистим данные о текущем списке просмотра
     user.set_list_cards(None)
     user.set_index_view(-1)
-    user.set_id_msg_edit_anketa(-1)
+    user.set_id_msg_edit_id(-1)
 
     # Вывод главного меню
-    message_main_menu = ms.get_main_menu_massage(user)
+    message_main_menu = ms.get_main_menu_message(user)
     send_message(message_main_menu)
 
 
@@ -179,6 +193,7 @@ def view_next_card(upload, user: User, vk_srv, token):
     else:
         main_menu(user)
 
+
 def view_back_card(user):
     next_index = user.get_index_view()
     next_index = next_index - 1
@@ -205,16 +220,19 @@ def check_user(user_id):
     return user
 
 
-def open_criteria(user: User):
-    criteria_dict = repository.open_criteria(user.get_user_id())
-    user.set_criteria(criteria_dict)
-    #message_criteria = ms.get_message_criteria(user)
-    #send_message(message_criteria)
+def handle_criteria(user: User):
+    if user.get_criteria() is None:
+        criteria_dict = repository.open_criteria(user.get_user_id())
+        user.set_criteria(criteria_dict)
+    message_criteria = ms.get_message_criteria(user)
+    if user.get_id_msg_edit_id() > -1:
+        vk_session.method('messages.delete', {'message_ids': user.get_id_msg_edit_id(), 'delete_for_all': 1})
+    return send_message(message_criteria)
 
 
 def send_ask_edit_criteria(user, str_arg):
-    user.set_step(str_arg)
-    message_edit = ms.get_edit_massage(user.get_user_id(), str_arg)
+    user.set_step('criteria_'+str_arg)
+    message_edit = ms.get_edit_message(user.get_user_id(), str_arg)
     send_message(message_edit)
 
 
@@ -244,11 +262,25 @@ def delete_from_list(user: User, repository):
     view_next_card(upload, user, vk_srv, token)
 
 
+def save_criteria(user: User):
+    repository.save_criteria(user)
+    users_list[event.user_id].set_id_msg_edit_id(message_id)
+    vk_session.method('messages.delete',
+                      dict(message_ids=user.get_id_msg_edit_id(),
+                           delete_for_all=1))
+    message_done_registration = ms.get_message_done_registration(user.get_user_id())
+    send_message(message_done_registration)
+    main_menu(user)
+
+
 if __name__ == '__main__':
     upload = VkUpload(vk_session)
     if realization == 'SQL':
         сheckDB = CheckDBSQL()
         repository = SQLRepository()
+    else:
+        сheckDB = CheckDBORM()
+        repository = ORMRepository()
 
 
     if сheckDB.check_db():
@@ -265,7 +297,7 @@ if __name__ == '__main__':
                 # Регистрация
                 elif text == 'хочу зарегистрироваться':
                     message_id = handle_registration(users_list[event.user_id])
-                    users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+                    users_list[event.user_id].set_id_msg_edit_id(message_id)
 
                 # Нажатие кнопок
                 elif payload:
@@ -275,25 +307,31 @@ if __name__ == '__main__':
                         str_arg = payload.get('action_edit_anketa')
                         send_ask_edit_anketa(users_list[event.user_id], str_arg)
 
-                    # # Критерии поиска
-                    # elif payload.get('action_edit_criteria'):
-                    #     str_arg = payload.get('action_edit_criteria')
-                    #     send_ask_edit_criteria(users_list[event.user_id], str_arg)
+                    # Критерии поиска
+                    elif payload.get('action_edit_criteria'):
+                        str_arg = payload.get('action_edit_criteria')
+                        send_ask_edit_criteria(users_list[event.user_id], str_arg)
+
+                    # Сохранить критерии
+                    elif payload.get('action_save_criteria'):
+                        save_criteria(users_list[event.user_id])
 
                     # Сохранить анкету
                     elif payload.get('action_save_anketa'):
                         save_anketa(users_list[event.user_id])
-                        open_criteria(users_list[event.user_id])
+                        message_id = handle_criteria(users_list[event.user_id])
+                        users_list[event.user_id].set_id_msg_edit_id(message_id)
 
                     # Отмена текущего действия
                     elif payload.get('action_cancel'):
-                        action = payload.get('action_main_manu')
+                        action = payload.get('action_cancel')
 
                         # Отмена редактирования пункта анкеты
                         if action == 'cancel_edit_anketa':
                             users_list[event.user_id].set_step(None)
                             message_id = handle_registration(users_list[event.user_id])
-                            users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+                            users_list[event.user_id].set_id_msg_edit_id(message_id)
+
 
                     # Команды главного меню
                     elif payload.get('action_main_manu'):
@@ -310,7 +348,11 @@ if __name__ == '__main__':
                         # Открыть список избранных
                         elif action == 'go_to_favorites':
                             go_to_favorites(upload, users_list[event.user_id], repository, token_api)
-                            
+
+                        # Редактировать критерии поиска
+                        elif action == 'criteria':
+                            message_id = handle_criteria(users_list[event.user_id])
+                            users_list[event.user_id].set_id_msg_edit_id(message_id)
 
                      # Просмотр текущего списка
                     elif payload.get('action_view'):
@@ -333,9 +375,13 @@ if __name__ == '__main__':
 
                 # Получение данных для текущего шага анкета или критерии поиска
                 elif not users_list.get(event.user_id) is None and not users_list[event.user_id].get_step() is None:
-                    set_param_anketa(users_list[event.user_id], text)
-                    message_id = handle_registration(users_list[event.user_id])
-                    users_list[event.user_id].set_id_msg_edit_anketa(message_id)
+                    set_param(users_list[event.user_id], text)
+                    if 'anketa' in users_list[event.user_id].get_step():
+                        message_id = handle_registration(users_list[event.user_id])
+                        users_list[event.user_id].set_id_msg_edit_id(message_id)
+                    else:
+                        message_id = handle_criteria(users_list[event.user_id])
+                        users_list[event.user_id].set_id_msg_edit_id(message_id)
 
                 # Просто сообщение от пользователя. Есть пользователь в базе или нет
                 else:

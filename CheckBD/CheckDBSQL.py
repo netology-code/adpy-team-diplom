@@ -96,7 +96,7 @@ class CheckDBSQL(ABCCheckDb):
                         city_id int NOT NULL,
                         FOREIGN KEY (gender_id) REFERENCES genders(id),
                         FOREIGN KEY (city_id) REFERENCES cities(id),
-                        about_me VARCHAR(200)
+                        about_me VARCHAR(1500)
                     );
                     """)
 

@@ -1,3 +1,5 @@
+from Criteria import Criteria
+
 
 class User:
     def __init__(self, user_id):
@@ -8,7 +10,7 @@ class User:
         self.__gender = 0
         self.__city = None
         self.__about_me = ""
-        self.__id_msg_edit_anketa_id = -1
+        self.__id_msg_edit_id = -1
         self.__step = None
         self.__index_view = -1
         self.__list_cards = None
@@ -56,11 +58,11 @@ class User:
     def get_about_me(self):
         return self.__about_me
 
-    def set_id_msg_edit_anketa(self, arg):
-        self.__id_msg_edit_anketa_id = arg
+    def set_id_msg_edit_id(self, arg):
+        self.__id_msg_edit_id = arg
 
-    def get_id_msg_edit_anketa(self):
-        return self.__id_msg_edit_anketa_id
+    def get_id_msg_edit_id(self):
+        return self.__id_msg_edit_id
 
     def set_step(self, arg):
         self.__step = arg
@@ -86,7 +88,7 @@ class User:
     def set_criteria(self, arg):
         self.__criteria = arg
 
-    def get_criteria(self):
+    def get_criteria(self) -> Criteria:
         return self.__criteria
 
     def delete_card(self):

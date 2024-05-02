@@ -9,15 +9,17 @@ from Repository.CardFind import CardFind
 from User import User
 
 edit_dict = {
-            'first_name': 'Имя',
-            'last_name': 'Фамилия',
-            'age': 'Возраст',
+            'first_name': 'имя',
+            'last_name': 'фамилия',
+            'age': 'возраст',
             'gender': 'Пол',
-            'city': 'город'
+            'city': 'город',
+            'status': 'статус',
+            'has_photo': 'есть фото'
             }
 
 
-def get_hello_massage(user_id, first_name):
+def get_hello_message(user_id, first_name):
     text_message = f'🚀 Привет, {first_name}!  👋  Я – бот, который экономит ' \
     f'твое время и помогает найти любовь быстро и легко! ' \
     f' ⏱️  Хочешь зарегистрироваться и начать поиск своей второй половинки?'
@@ -35,7 +37,7 @@ def get_hello_massage(user_id, first_name):
     return message
 
 
-def get_hello_massage_error(user_id):
+def get_hello_message_error(user_id):
     text_message = f'🚀 Привет! ' \
                    f'Извините, сервис не доступен.' \
                    f'Попробуйте отправить сообщение позже.'
@@ -49,7 +51,7 @@ def get_hello_massage_error(user_id):
     return message
 
 
-def get_registration_massage(user: User):
+def get_registration_message(user: User):
     text_message = f'Анкета:\n' \
                    f'новое значение - нажать кнопку\n'
     settings = dict(one_time=False, inline=True)
@@ -66,7 +68,7 @@ def get_registration_massage(user: User):
     keyboard.add_button(label='Пол: '+str(user.get_gender_str()), color=VkKeyboardColor.SECONDARY,
                                    payload={"action_edit_anketa": "gender"})
     keyboard.add_line()
-    keyboard.add_button(label='Город: '+user.get_city().get('title'), color=VkKeyboardColor.SECONDARY,
+    keyboard.add_button(label='Город: '+user.get_city().get('name'), color=VkKeyboardColor.SECONDARY,
                                    payload={"action_edit_anketa": "city"})
     keyboard.add_line()
     keyboard.add_button(label='Сохранить анкету', color=VkKeyboardColor.POSITIVE,
@@ -86,34 +88,37 @@ def get_registration_massage(user: User):
     return message
 
 
-def get_edit_massage(user_id, str_arg):
+def get_edit_message(user_id, str_arg):
     text_message = f'Задайте новое значение ' + edit_dict[str_arg] + ':'
-    if str_arg == 'gender':
+    if 'gender' in str_arg:
         text_message += f'1 - Женщина, 2 - Мужчина'
+    elif str_arg == 'status':
+        text_message += f'1 - "не женат (не замужем), другое - в поиске'
+    elif str_arg == 'has_photo':
+        text_message += f'1 - "только с фото, другое - нет'
 
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Отмена', color=VkKeyboardColor.NEGATIVE,
-                        payload={"action_cancel": "cancel_edit_anketa"})
+    # keyboard = VkKeyboard(one_time=True)
+    # keyboard.add_button('Отмена', color=VkKeyboardColor.NEGATIVE,
+    #                     payload={"action_cancel": "cancel_edit_anketa"})
 
     message = {
         'user_id': user_id,
         'message': text_message,
-        'random_id': get_random_id(),
-        'keyboard': keyboard.get_keyboard()
+        'random_id': get_random_id()
     }
 
     return message
 
 
-def get_main_menu_massage(user: User):
+def get_main_menu_message(user: User):
     text_message = f'Главное меню'
     keyboard = VkKeyboard(one_time=False)
     keyboard.add_button('Поиск', color=VkKeyboardColor.PRIMARY,
                         payload={"action_main_manu": "find_users"})
 
-    # keyboard.add_line()
-    # keyboard.add_button('Критерии поиска', color=VkKeyboardColor.PRIMARY,
-    #                     payload={"action_main_manu": "criteria"})
+    keyboard.add_line()
+    keyboard.add_button('Критерии поиска', color=VkKeyboardColor.PRIMARY,
+                        payload={"action_main_manu": "criteria"})
 
 
     keyboard.add_line()
@@ -231,26 +236,23 @@ def get_message_criteria(user: User):
     criteria = user.get_criteria()
     settings = dict(one_time=False, inline=True)
     keyboard = VkKeyboard(**settings)
-    keyboard.add_button(label='Пол: ' + "женщина" if criteria['gender_id'] == 1 else "мужчина", color=VkKeyboardColor.SECONDARY,
-                        payload={"action_edit_criteria": "gender_id"})
+    keyboard.add_button(label='Пол: ' + ("женщина" if criteria.gender_id == 1 else "мужчина"),
+                        color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "gender"})
     keyboard.add_line()
-    keyboard.add_button(label='Статус: ' + "не женат (не замужем)" if criteria['status'] == 1 else "в активном поиске",
+    keyboard.add_button(label='Статус: ' + ("не женат (не замужем)" if criteria.status == 1 else "в активном поиске"),
                         color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "status"})
     keyboard.add_line()
-    keyboard.add_button(label='Возраст с: ' + str(criteria['age_from']), color=VkKeyboardColor.SECONDARY,
-                        payload={"action_edit_criteria": "age_from"})
+    keyboard.add_button(label='Возраст с - по: с ' + str(criteria.age_from) + ' - по ' + str(criteria.age_to),
+                        color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "age_criteria"})
     keyboard.add_line()
-    keyboard.add_button(label='Возраст по: ' + str(criteria['age_to']), color=VkKeyboardColor.SECONDARY,
-                        payload={"action_edit_criteria": "age_to"})
-    keyboard.add_line()
-    keyboard.add_button(label='Город: ' + criteria['city_name'], color=VkKeyboardColor.SECONDARY,
+    keyboard.add_button(label='Город: ' + criteria.city['name'], color=VkKeyboardColor.SECONDARY,
                         payload={"action_edit_criteria": "city"})
     keyboard.add_line()
-    keyboard.add_button(label='Есть фото' + "да" if criteria['has_photo'] == 1 else "нет", color=VkKeyboardColor.SECONDARY,
-                        payload={"action_edit_criteria": "has_photo"})
+    keyboard.add_button(label='Есть фото: ' + ("да" if criteria.has_photo == 1 else "нет"),
+                        color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "has_photo"})
     keyboard.add_line()
-    keyboard.add_button(label='Сохранить критерии' + "да" if criteria['has_photo'] == 1 else "нет", color=VkKeyboardColor.POSITIVE,
-                        payload={"action_edit_criteria": "save_criteria"})
+    keyboard.add_button(label='Сохранить критерии', color=VkKeyboardColor.POSITIVE,
+                        payload={"action_save_criteria": "save_criteria"})
 
     message = {
         'user_id': user.get_user_id(),

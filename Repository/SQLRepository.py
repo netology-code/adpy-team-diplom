@@ -2,6 +2,7 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
+from Criteria import Criteria
 from Repository.ABCRepository import ABCRepository
 import os
 
@@ -41,12 +42,12 @@ class SQLRepository(ABCRepository):
             else:
                 #Проверим надичие города в базе
                 sql = """SELECT id FROM cities WHERE name=%s;"""
-                cursor.execute(sql, (user.get_city()['title'],))
+                cursor.execute(sql, (user.get_city()['name'],))
                 result = cursor.fetchone()
                 if result is None:
                     sql = """INSERT INTO cities(id, name)
                                 VALUES(%s, %s);"""
-                    cursor.execute(sql, (user.get_city()['id'], user.get_city()['title'],))
+                    cursor.execute(sql, (user.get_city()['id'], user.get_city()['name'],))
 
                 sql = """INSERT INTO users(id, first_name, last_name, age, gender_id, city_id, about_me)
                                                      VALUES(%s, %s, %s, %s, %s, %s, %s);"""
@@ -242,22 +243,57 @@ class SQLRepository(ABCRepository):
                                    password=os.getenv(key='USER_PASSWORD_DB'))
 
         with connect.cursor() as cursor:
-            sql = """SELECT gender_id, status, age_from, age_to, city_id, cities.name, has_photo
+            sql = """SELECT criteria.id, gender_id, status, age_from, age_to, city_id, cities.name, has_photo
                         FROM criteria
                         INNER JOIN cities ON criteria.city_id = cities.id
                         WHERE user_id=%s;"""
             cursor.execute(sql, (user_id,))
             result = cursor.fetchone()
             if not result is None:
-                return {'gender_id': 1 if result[0] == 2 else 1, 'status': result[1], 'age_from': result[2], 'age_to': result[3],
-                        'city_id': result[4], 'city_name': result[5], 'has_photo': result[6]}
+                criteria = Criteria()
+                criteria.id = result[0]
+                criteria.gender_id = 1 if result[1] == 2 else 1
+                criteria.status = result[2]
+                criteria.age_from = result[3]
+                criteria.age_to = result[4]
+                criteria.city = {'id': result[5], 'name': result[6]}
+                criteria.has_photo = result[7]
+                return criteria
             else:
-                return {
-                    'gender_id': 0,
-                    'status': 0,
-                    'age_from': 0,
-                    'age_to': 0,
-                    'city_id': 0,
-                    'city_name': '',
-                    'has_photo': 0
-                }
+                return Criteria()
+
+    def save_criteria(self, user: User):
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+
+        with connect.cursor() as cursor:
+            criteria = user.get_criteria()
+            # Проверим надичие города в базе
+            sql = """SELECT id FROM cities WHERE name=%s;"""
+            cursor.execute(sql, (criteria.city['name'],))
+            result = cursor.fetchone()
+            if result is None:
+                sql = """INSERT INTO cities(id, name)
+                                                        VALUES(%s, %s);"""
+                cursor.execute(sql, (criteria.city['id'], criteria.city['name'],))
+
+            sql = """UPDATE criteria SET gender_id=%s,
+                                                      status=%s, 
+                                                      age_from=%s,
+                                                      age_to=%s,
+                                                      city_id=%s,
+                                                      has_photo=%s                                            
+                                                WHERE id=%s and user_id=%s;"""
+
+            cursor.execute(sql, (criteria.gender_id,
+                                 criteria.status,
+                                 criteria.age_from,
+                                 criteria.age_to,
+                                 criteria.city['id'],
+                                 criteria.has_photo,
+                                 criteria.id,
+                                 user.get_user_id(),))
+
+        connect.commit()
+        connect.close()

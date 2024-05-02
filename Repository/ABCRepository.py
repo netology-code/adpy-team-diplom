@@ -39,3 +39,7 @@ class ABCRepository(ABC):
     @abstractmethod
     def open_criteria(self, user_id):
         pass
+
+    @abstractmethod
+    def save_criteria(self, user: User):
+        pass

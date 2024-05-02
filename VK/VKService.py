@@ -3,6 +3,7 @@ from datetime import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 
+from Criteria import Criteria
 from Repository.CardFind import CardFind
 from Result import Result
 from User import User
@@ -35,7 +36,7 @@ class VKService:
         else:
             return None
 
-    def users_search(self, criteria, token) -> dict:
+    def users_search(self, criteria: Criteria, token) -> dict:
 
         """
         Выполняет get-запрос к vk api users.search с поиском пользователей
@@ -44,12 +45,12 @@ class VKService:
         """
         url = 'https://api.vk.com/method/users.search'
         criteria_dict = {
-            'sex': criteria['gender_id'],
-            'status': criteria['status'],
-            'age_from': criteria['age_from'],
-            'age_to': criteria['age_to'],
-            'has_photo': criteria['has_photo'],
-            'city': criteria['city_id'],
+            'sex': criteria.gender_id,
+            'status': criteria.status,
+            'age_from': criteria.age_from,
+            'age_to': criteria.age_to,
+            'has_photo': criteria.has_photo,
+            'city': criteria.city['id'],
             'count': 100,
             'access_token': token,
             'fields': 'city, bdate, sex',
@@ -61,6 +62,8 @@ class VKService:
             users_list = []
             items = response.json().get('response').get('items')
             for item in items:
+                if not item.get('city'):
+                    item['city'] = {'id': criteria.city['id'], 'title': criteria.city['name']}
                 temp = CardFind(item)
                 if item.get('bdate'):
                     temp.age = self.determine_age(item.get('bdate'))
@@ -93,9 +96,9 @@ class VKService:
                 photo_items = result.value.get('response').get('items')
                 for item in photo_items:
                     if not item.get('likes') is None:
-                        photo_dict_likes[item['sizes'][0]['url']] = item['likes']['user_likes']
+                        photo_dict_likes[item['sizes'][3]['url']] = item['likes']['user_likes']
                     else:
-                        photo_dict_likes[item['sizes'][0]['url']] = 0
+                        photo_dict_likes[item['sizes'][3]['url']] = 0
 
                 sorted(photo_dict_likes.items(), key=lambda x: x[1], reverse=True)
             except Exception as e:
@@ -146,7 +149,7 @@ class VKService:
         if response.status_code == 200:
             for item in response.json()['response']['items']:
                 if item['title'].lower() == text:
-                    city = item
+                    city = {'id': item['id'], 'name': item['title']}
                     break
             return city
         else:
