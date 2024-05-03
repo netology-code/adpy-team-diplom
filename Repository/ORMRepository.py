@@ -11,6 +11,7 @@ from ORMTableStructure import Users, Favorites, Exceptions
 from Repository.ABCRepository import ABCRepository
 
 
+
 class ORMRepository(ABCRepository):
 
     def get_engine(self) -> sqlalchemy.Engine:
