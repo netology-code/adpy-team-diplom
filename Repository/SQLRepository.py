@@ -83,7 +83,7 @@ class SQLRepository(ABCRepository):
                                     photo1, photo2, photo3, city_id)
                                     VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
             card = user.get_card()
-            photos = card.get('photos')
+            photos = card.photos
             photo1 = ''
             photo2 = ''
             photo3 = ''
@@ -99,15 +99,15 @@ class SQLRepository(ABCRepository):
 
 
             cursor.execute(sql, (str(user.get_user_id()),
-                                 card['first_name'],
-                                 card['last_name'],
+                                 card.first_name,
+                                 card.last_name,
                                  0,
-                                 card['sex'],
-                                 'https://vk.com/id' + str(card['id']),
+                                 card.gender,
+                                 'https://vk.com/id' + str(card.id),
                                  photo1,
                                  photo2,
                                  photo3,
-                                 card['city']['id']))
+                                 card.city_id))
 
         connect.commit()
         connect.close()

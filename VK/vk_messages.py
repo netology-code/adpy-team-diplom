@@ -92,7 +92,7 @@ def get_registration_message(user: User):
 def get_edit_message(user_id, str_arg):
     text_message = f'Задайте новое значение ' + edit_dict[str_arg] + ':'
     if 'gender' in str_arg:
-        text_message += f'1 - Женщина, 2 - Мужчина'
+        text_message += f'1 - Женщина, 2 - Мужчина, 0 - Все'
     elif str_arg == 'status':
         text_message += f'1 - "не женат (не замужем), другое - в поиске'
     elif str_arg == 'has_photo':
@@ -237,7 +237,13 @@ def get_message_criteria(user: User):
     criteria = user.get_criteria()
     settings = dict(one_time=False, inline=True)
     keyboard = VkKeyboard(**settings)
-    keyboard.add_button(label='Пол: ' + ("женщина" if criteria.gender_id == 1 else "мужчина"),
+    if criteria.gender_id == 1:
+        sex_text = 'женщина'
+    elif criteria.gender_id == 2:
+        sex_text = 'мужчина'
+    else:
+        sex_text = 'все'
+    keyboard.add_button(label='Пол: ' + sex_text,
                         color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "gender"})
     keyboard.add_line()
     keyboard.add_button(label='Статус: ' + ("не женат (не замужем)" if criteria.status == 1 else "в активном поиске"),
