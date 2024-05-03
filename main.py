@@ -113,10 +113,10 @@ def set_param(user: User, text: str):
     else:
         if user.get_step() == 'criteria_gender':
             user.get_criteria().gender_id = int(text)
-        elif user.get_step() == 'criteria_age_from':
-            user.get_criteria().age_from = text
-        elif user.get_step() == 'criteria_age_to':
-            user.get_criteria().age_to = text
+        elif user.get_step() == 'criteria_age':
+            age = text.split('-')
+            user.get_criteria().age_from = age[0]
+            user.get_criteria().age_to = age[1]
         elif user.get_step() == 'criteria_status':
             user.get_criteria().status = int(text)
         elif user.get_step() == 'criteria_has_photo':

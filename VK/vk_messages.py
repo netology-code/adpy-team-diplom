@@ -15,7 +15,8 @@ edit_dict = {
             'gender': 'Пол',
             'city': 'город',
             'status': 'статус',
-            'has_photo': 'есть фото'
+            'has_photo': 'есть фото',
+            'age_criteria': 'фильтр по возрасту\nс разделителем в виде: 25-55'
             }
 
 
@@ -243,7 +244,7 @@ def get_message_criteria(user: User):
                         color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "status"})
     keyboard.add_line()
     keyboard.add_button(label='Возраст с - по: с ' + str(criteria.age_from) + ' - по ' + str(criteria.age_to),
-                        color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "age_criteria"})
+                        color=VkKeyboardColor.SECONDARY, payload={"action_edit_criteria": "age"})
     keyboard.add_line()
     keyboard.add_button(label='Город: ' + criteria.city['name'], color=VkKeyboardColor.SECONDARY,
                         payload={"action_edit_criteria": "city"})
