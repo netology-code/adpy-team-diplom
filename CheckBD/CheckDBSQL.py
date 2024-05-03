@@ -18,8 +18,8 @@ class CheckDBSQL(ABCCheckDb):
 
         with self.connect.cursor() as cursor:
             cursor = self.connect.cursor()
-            cursor.execute("SELECT 1 FROM pg_database WHERE datname='{dbname}'".
-                           format(dbname=self.db_name))
+            cursor.execute("SELECT 1 FROM pg_database WHERE datname=%s", (self.db_name,))
+
 
             if cursor.fetchone() is None:
                 return False
