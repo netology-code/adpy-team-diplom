@@ -12,7 +12,7 @@ class CheckDBSQL(ABCCheckDb):
             bool : True - есть база данных, False - нет базы данных
         """
 
-        self.connect = psycopg2.connect(dbname='postgres',
+        self.connect = psycopg2.connect(dbname= self.db_name,
                                         user=os.getenv(key='USER_NAME_DB'),
                                         password=os.getenv(key='USER_PASSWORD_DB'))
 
