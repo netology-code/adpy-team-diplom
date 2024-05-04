@@ -10,12 +10,10 @@ from dotenv import load_dotenv
 import os
 import VK.vk_messages as ms
 from CheckBD.ABCCheckDb import ABCCheckDb
-from CheckBD.CheckDBORM import CheckDBORM
 from CheckBD.CheckDBSQL import CheckDBSQL
 from Repository.ABCRepository import ABCRepository
 from Repository.CardExceptions import CardExceptions
 from Repository.CardFavorites import CardFavorites
-from Repository.ORMRepository import ORMRepository
 from Repository.SQLRepository import SQLRepository
 from User import User
 from VK.VKService import VKService
@@ -294,12 +292,8 @@ def add_exceptions(repository, user: User):
 
 if __name__ == '__main__':
     upload = VkUpload(vk_session)
-    if realization == TyleRealization.sql.value:
-        сheckDB = CheckDBSQL()
-        repository = SQLRepository()
-    else:
-        сheckDB = CheckDBORM()
-        repository = ORMRepository()
+    сheckDB = CheckDBSQL()
+    repository = SQLRepository()
 
 
     if сheckDB.check_db():

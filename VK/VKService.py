@@ -6,7 +6,6 @@ from dateutil.relativedelta import relativedelta
 from Criteria import Criteria
 from Repository.CardFind import CardFind
 from Result import Result
-from User import User
 
 
 class VKService:
