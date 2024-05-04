@@ -6,6 +6,7 @@ from Criteria import Criteria
 from Repository.ABCRepository import ABCRepository
 import os
 
+from Repository.CardExceptions import CardExceptions
 from Repository.CardFavorites import CardFavorites
 from User import User
 
@@ -13,6 +14,11 @@ from User import User
 class SQLRepository(ABCRepository):
 
     def add_user(self, user: User):
+        """
+        Добавление пользователя при регистрации
+        :param user:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                         user=os.getenv(key='USER_NAME_DB'),
                                         password=os.getenv(key='USER_PASSWORD_DB'))
@@ -74,6 +80,11 @@ class SQLRepository(ABCRepository):
         connect.close()
 
     def add_favorites(self, user: User):
+        """
+        Добавление избранных
+        :param user:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))
@@ -112,44 +123,56 @@ class SQLRepository(ABCRepository):
         connect.commit()
         connect.close()
 
-    def add_exceptions(self, user_vk):
+    def add_exceptions(self, user: User):
         """
-                Получение vk_пользователей из черного списка
+        Добавление исключений (черный список)
+        :param user:
+        :return:
+        """
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
 
-                Args:
-                    user_id (int): VK-идентификатор пользователя
+        with connect.cursor() as cursor:
+            sql = """INSERT INTO exceptions(user_id, first_name, last_name, age, gender_id, profile, 
+                                            photo1, photo2, photo3, city_id)
+                                            VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+            card = user.get_card()
+            photos = card.photos
+            photo1 = ''
+            photo2 = ''
+            photo3 = ''
+            if len(photos) == 3:
+                photo1 = photos[0]
+                photo2 = photos[1]
+                photo3 = photos[2]
+            elif len(photos) == 2:
+                photo1 = photos[0]
+                photo2 = photos[1]
+            elif len(photos) == 1:
+                photo1 = photos[0]
 
-                Returns:
-                    list_favorites (list): список пользователей-словарей
-                """
-        # with self.connect.cursor() as cursor:
-        #     select_dict = []
-        #     data = []
-        #
-        #     select_dict.append('user_id=%s')
-        #     data.append(str(user_id))
-        #
-        #     select_stmt = ("SELECT first_name, last_name, age, genders.gender, profile, "
-        #                    "photo1, photo2, photo3, cities.city"
-        #                    " FROM exceptions "
-        #                    " INNER JOIN genders"
-        #                    " ON exceptions.user_id = genders.id"
-        #                    " INNER JOIN cities"
-        #                    " ON exceptions.city_id = cities.id"
-        #                    " WHERE user_id=%s")
-        #
-        #     cursor.execute(select_stmt, tuple(data))
+            cursor.execute(sql, (str(user.get_user_id()),
+                                 card.first_name,
+                                 card.last_name,
+                                 0,
+                                 card.gender,
+                                 'https://vk.com/id' + str(card.id),
+                                 photo1,
+                                 photo2,
+                                 photo3,
+                                 card.city_id))
 
-        list_favorites = []
-        return list_favorites
-
-    def change_favorites(self, user_vk):
-        pass
-
-    def change_exceptions(self, user_vk):
-        pass
+        connect.commit()
+        connect.close()
 
     def delete_favorites(self, user_id, profile):
+        """
+        Удалить из списка избранные
+        :param user_id:
+        :param profile:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))
@@ -161,6 +184,12 @@ class SQLRepository(ABCRepository):
         connect.close()
 
     def delete_exceptions(self, user_id, profile):
+        """
+        Удаление из черного списка
+        :param user_id:
+        :param profile:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))
@@ -171,7 +200,12 @@ class SQLRepository(ABCRepository):
         connect.commit()
         connect.close()
 
-    def get_favorites(self, user_id, token):
+    def get_favorites(self, user_id):
+        """
+        Получить список избранных
+        :param user_id:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))
@@ -204,10 +238,48 @@ class SQLRepository(ABCRepository):
                 return None
 
     def get_exceptions(self, user_id):
-        pass
+        """
+        Получить черный список
+        :param user_id:
+        :return:
+        """
+        connect = psycopg2.connect(dbname='findme',
+                                   user=os.getenv(key='USER_NAME_DB'),
+                                   password=os.getenv(key='USER_PASSWORD_DB'))
+        with connect.cursor() as cursor:
+            sql = """SELECT exceptions.user_id, exceptions.first_name, exceptions.last_name, exceptions.age, 
+                                exceptions.gender_id, exceptions.profile, exceptions.photo1, exceptions.photo2, 
+                                exceptions.photo3, cities.id, cities.name 
+                                FROM exceptions 
+                                INNER JOIN cities ON exceptions.city_id = cities.id
+                                WHERE exceptions.user_id=%s;"""
+            cursor.execute(sql, (user_id,))
+            result = cursor.fetchall()
+            card_list = []
+            for item in result:
+                card = CardExceptions()
+                card.id = item[0]
+                card.first_name = item[1]
+                card.last_name = item[2]
+                card.age = item[3]
+                card.gender_id = item[4]
+                card.profile = item[5]
+                card.photos = [item[6], item[7], item[8]]
+                card.city_id = item[9]
+                card.city_name = item[10]
+                card_list.append(card)
+
+            if len(card_list) > 0:
+                return card_list
+            else:
+                return None
 
     def get_user(self, user_id) -> User:
-
+        """
+        Получить зарегистрированного пользователя
+        :param user_id:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))
@@ -238,6 +310,11 @@ class SQLRepository(ABCRepository):
 
 
     def open_criteria(self, user_id):
+        """
+        Получить критерий поиска
+        :param user_id:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))
@@ -263,6 +340,11 @@ class SQLRepository(ABCRepository):
                 return Criteria()
 
     def save_criteria(self, user: User):
+        """
+        Сохранить критерий поиска
+        :param user:
+        :return:
+        """
         connect = psycopg2.connect(dbname='findme',
                                    user=os.getenv(key='USER_NAME_DB'),
                                    password=os.getenv(key='USER_PASSWORD_DB'))

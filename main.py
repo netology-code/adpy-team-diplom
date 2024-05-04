@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from io import BytesIO
 
 import requests
@@ -27,6 +28,9 @@ vk_session = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk_session)
 users_list = {}
 realization = os.getenv(key='REALIZATION')
+class TyleRealization(Enum):
+    sql = 'SQL'
+    orm = 'ORM'
 repository: ABCRepository
 сheckDB: ABCCheckDb
 upload:VkUpload
@@ -240,8 +244,8 @@ def add_favorites(repository, user: User):
     repository.add_favorites(user)
 
 
-def go_to_favorites(upload, user: User, repository, token_api):
-    list_cards = repository.get_favorites(user.get_user_id(), token_api)
+def go_to_favorites(upload, user: User, repository):
+    list_cards = repository.get_favorites(user.get_user_id())
     if not list_cards is None:
         user.set_list_cards(list_cards)
         user.set_index_view(-1)
@@ -273,9 +277,24 @@ def save_criteria(user: User):
     main_menu(user)
 
 
+def go_to_exceptions(upload, user: User, repository):
+    list_cards = repository.get_exceptions(user.get_user_id())
+    if not list_cards is None:
+        user.set_list_cards(list_cards)
+        user.set_index_view(-1)
+        view_next_card(upload, user, vk_srv, token)
+    else:
+        message_error_search = ms.get_message_error_search(user.get_user_id())
+        send_message(message_error_search)
+
+
+def add_exceptions(repository, user: User):
+    repository.add_exceptions(user)
+
+
 if __name__ == '__main__':
     upload = VkUpload(vk_session)
-    if realization == 'SQL':
+    if realization == TyleRealization.sql.value:
         сheckDB = CheckDBSQL()
         repository = SQLRepository()
     else:
@@ -347,7 +366,11 @@ if __name__ == '__main__':
 
                         # Открыть список избранных
                         elif action == 'go_to_favorites':
-                            go_to_favorites(upload, users_list[event.user_id], repository, token_api)
+                            go_to_favorites(upload, users_list[event.user_id], repository)
+
+                        # Открыть черный избранных
+                        elif action == 'go_to_exception':
+                            go_to_exceptions(upload, users_list[event.user_id], repository)
 
                         # Редактировать критерии поиска
                         elif action == 'criteria':
@@ -365,13 +388,21 @@ if __name__ == '__main__':
                         elif action == 'go_to_back':
                             view_back_card(users_list[event.user_id])
 
-                        # Переход назад
+                        # Добавить в избранное
                         elif action == 'add_favorites':
                             add_favorites(repository, users_list[event.user_id])
 
-                        # Открыть список избранных
+                        # Добавить в избранное
+                        elif action == 'add_favorites':
+                            add_favorites(repository, users_list[event.user_id])
+
+                        # Удалить из избранных
                         elif action == 'delete_from_list':
                             delete_from_list(users_list[event.user_id], repository)
+
+                        # Добавить в черный список
+                        elif action == 'add_exceptions':
+                            add_exceptions(repository, users_list[event.user_id])
 
                 # Получение данных для текущего шага анкета или критерии поиска
                 elif not users_list.get(event.user_id) is None and not users_list[event.user_id].get_step() is None:

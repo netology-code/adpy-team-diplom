@@ -114,6 +114,12 @@ class VKService:
             return photo_list[:3]
 
     def users_photos(self, user_id, token) -> Result:
+        """
+        Получить ссылки на фото пользователя
+        :param user_id:
+        :param token:
+        :return:
+        """
         url = 'https://api.vk.com/method/photos.get'
         params = {'owner_id': user_id,
                   'access_token': token,
@@ -137,6 +143,12 @@ class VKService:
         return relativedelta(datetime.now(), birth_date).years
 
     def get_city_by_name(self, token, text):
+        """
+        Поиск кода города по имени города
+        :param token:
+        :param text:
+        :return:
+        """
         url = 'https://api.vk.com/method/database.getCities'
 
         params = {

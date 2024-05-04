@@ -12,7 +12,7 @@ class CheckDBSQL(ABCCheckDb):
             bool : True - есть база данных, False - нет базы данных
         """
 
-        self.connect = psycopg2.connect(dbname= self.db_name,
+        self.connect = psycopg2.connect(dbname='postgres',
                                         user=os.getenv(key='USER_NAME_DB'),
                                         password=os.getenv(key='USER_PASSWORD_DB'))
 
@@ -57,6 +57,7 @@ class CheckDBSQL(ABCCheckDb):
     def exists_tables(self, table_name) -> bool:
         """
         Проверка, все ли нужные таблицы созданы
+        :param table_name: имя таблицы для проверки
         Returns:
             bool : True - если созданы, False - нет
         """
@@ -134,7 +135,7 @@ class CheckDBSQL(ABCCheckDb):
                             """)
 
             cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS exceptions(
+                           CREATE TABLE IF NOT EXISTS exceptions(
                                 id SERIAL PRIMARY KEY,
                                 user_id int NOT NULL,
                                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -144,9 +145,9 @@ class CheckDBSQL(ABCCheckDb):
                                 gender_id int NOT NULL,
                                 FOREIGN KEY (gender_id) REFERENCES genders(id),
                                 profile VARCHAR(50) NOT NULL,
-                                photo1 VARCHAR(50),
-                                photo2 VARCHAR(50),
-                                photo3 VARCHAR(50),
+                                photo1 VARCHAR(1000),
+                                photo2 VARCHAR(1000),
+                                photo3 VARCHAR(1000),
                                 city_id int NOT NULL,
                                 FOREIGN KEY (city_id) REFERENCES cities(id)
                             );
@@ -159,6 +160,10 @@ class CheckDBSQL(ABCCheckDb):
                 self.error = 'Не все таблицы созданы'
 
     def fill_tables(self):
+        """
+        Заполнение предопределенных данных
+        :return:
+        """
 
         if not self.error is None:
             return

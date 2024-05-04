@@ -121,14 +121,13 @@ def get_main_menu_message(user: User):
     keyboard.add_button('Критерии поиска', color=VkKeyboardColor.PRIMARY,
                         payload={"action_main_manu": "criteria"})
 
-
     keyboard.add_line()
     keyboard.add_button('Избранные', color=VkKeyboardColor.PRIMARY,
                         payload={"action_main_manu": "go_to_favorites"})
 
-    # keyboard.add_line()
-    # keyboard.add_button('В черный список', color=VkKeyboardColor.PRIMARY,
-    #                     payload={"action_view": "go_to_exception"})
+    keyboard.add_line()
+    keyboard.add_button('В черный список', color=VkKeyboardColor.PRIMARY,
+                        payload={"action_main_manu": "go_to_exception"})
 
     # keyboard.add_button('Анкета', color=VkKeyboardColor.PRIMARY,
     #                     payload={"action_main_manu": "anketa"})
@@ -182,6 +181,9 @@ def get_message_view(attachment, card, user: User):
         keyboard.add_line()
         keyboard.add_button('Добавить в избранные', color=VkKeyboardColor.PRIMARY,
                             payload={"action_view": "add_favorites"})
+        keyboard.add_line()
+        keyboard.add_button('Добавить в черный список', color=VkKeyboardColor.PRIMARY,
+                            payload={"action_view": "add_exceptions"})
     else:
         if user.get_size_list_cards() > 1:
             keyboard.add_line()

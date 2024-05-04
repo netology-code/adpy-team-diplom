@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.orm import sessionmaker
 from CheckBD.CheckDBORM import CheckDBORM
-from CheckBD.ORMTableStructure import Genders
+from ORMTableStructure import Genders
 
 
 

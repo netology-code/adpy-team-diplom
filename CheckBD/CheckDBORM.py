@@ -9,7 +9,6 @@ from ORMTableStructure import form_tables, get_table_list
 from CheckBD.ABCCheckDb import ABCCheckDb
 
 
-
 class CheckDBORM(ABCCheckDb):
 
     def get_engine(self):
