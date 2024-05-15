@@ -209,4 +209,59 @@ USER_PASSWORD_DB='postgres'
 
 ### Клавиша "Поиск"
 
-- ........
+- Нажимаем кнопку "Поиск"
+
+
+-  После нажатия кнопки появится первая кандидатура, котрую мы можем пропустить, добавить в избранное или занести в черный список
+<img src="Materials/Registration/search1.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+-  Перейти к следующей кандидатуре можно нажатием на кнопку "Вперед". Для возрата к предыдущей кандидатуре следует нажать кнопку "Назад"
+<img src="Materials/Registration/search2.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+- Добавить кандидата в избранное можно нажатием кнопки "Добавить в избранное"
+<img src="Materials/Registration/favorites.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+- Добавление кандидата в черный список осуществляется нажатием кнопки  "Добавить в черный список"
+<img src="Materials/Registration/exceptions.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+- Возврат в главное меню осуществляется нажатием кнопки "Главное меню"
+<img src="Materials/Registration/main_menu.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+---------------------
+
+### Клавиша "Критерии поиска"
+
+- Изменение критериев поиска можно осуществить после нажатия кнопки "Критерии поиска" в главном меню
+<img src="Materials/Registration/criteria.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+---------------------
+
+### Клавиша "Избранное"
+
+
+- Просмотр всех избранных партнеров возможен после нажатия кнопки "Избранные"  
+<img src="Materials/Registration/favorites2.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
+
+---------------------
+
+### Клавиша "В черный список"
+
+
+- Просмотр всех партнеров из черноего списка возможен после нажатия кнопки "В черный список"  
+<img src="Materials/Registration/exceptions2.png" alt="drawing" width="450" height="300"/>
+&nbsp;
+
