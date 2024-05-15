@@ -5,8 +5,8 @@ from vk_api import VkUpload
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
-from Repository.CardFind import CardFind
-from User import User
+from Repository.card_find import CardFind
+from user import User
 
 edit_dict = {
             'first_name': 'имя',

@@ -1,6 +1,6 @@
 import psycopg2
 import os
-from CheckBD.ABCCheckDb import ABCCheckDb
+from CheckBD.abc_check_db import ABCCheckDb
 
 
 class CheckDBSQL(ABCCheckDb):
@@ -54,7 +54,7 @@ class CheckDBSQL(ABCCheckDb):
                                                     user=os.getenv(key='USER_NAME_DB'),
                                                     password=os.getenv(key='USER_PASSWORD_DB'))
 
-    def exists_tables(self, table_name) -> bool:
+    def exists_table(self, table_name) -> bool:
         """
         Проверка, все ли нужные таблицы созданы
         :param table_name: имя таблицы для проверки
@@ -67,27 +67,24 @@ class CheckDBSQL(ABCCheckDb):
             return True if cursor.fetchone() else False
 
     def create_tables(self):
+        """
+        Создание таблиц
+        """
 
         if not self.error is None:
             return
 
         with self.connect.cursor() as cursor:
 
-            cursor.execute("""
+            sql = """
                     CREATE TABLE IF NOT EXISTS genders(
                         id SERIAL PRIMARY KEY,
                         gender VARCHAR(10) NOT NULL
                     );
-                    """)
-
-            cursor.execute("""
                     CREATE TABLE IF NOT EXISTS cities(
                         id SERIAL PRIMARY KEY,
                         name VARCHAR(50) NOT NULL
                     );
-                    """)
-
-            cursor.execute("""
                     CREATE TABLE IF NOT EXISTS users(
                         id SERIAL PRIMARY KEY,
                         first_name VARCHAR(50) NOT NULL,
@@ -99,64 +96,57 @@ class CheckDBSQL(ABCCheckDb):
                         FOREIGN KEY (city_id) REFERENCES cities(id),
                         about_me VARCHAR(1500)
                     );
-                    """)
+                    CREATE TABLE IF NOT EXISTS criteria(
+                        id SERIAL PRIMARY KEY,
+                        user_id int NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        gender_id int NOT NULL,
+                        status int,
+                        age_from int,
+                        age_to int,
+                        city_id int,
+                        has_photo int
+                    );
+                    CREATE TABLE IF NOT EXISTS favorites(
+                        id SERIAL PRIMARY KEY,
+                        user_id int NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        first_name VARCHAR(50) NOT NULL,
+                        last_name VARCHAR(50) NOT NULL,
+                        age int NOT NULL,
+                        gender_id int NOT NULL,
+                        FOREIGN KEY (gender_id) REFERENCES genders(id),
+                        profile VARCHAR(50) NOT NULL,
+                        photo1 VARCHAR(1000),
+                        photo2 VARCHAR(1000),
+                        photo3 VARCHAR(1000),
+                        city_id int NOT NULL,
+                        FOREIGN KEY (city_id) REFERENCES cities(id)
+                    );
+                    CREATE TABLE IF NOT EXISTS exceptions(
+                        id SERIAL PRIMARY KEY,
+                        user_id int NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        first_name VARCHAR(50) NOT NULL,
+                        last_name VARCHAR(50) NOT NULL,
+                        age int NOT NULL,
+                        gender_id int NOT NULL,
+                        FOREIGN KEY (gender_id) REFERENCES genders(id),
+                        profile VARCHAR(50) NOT NULL,
+                        photo1 VARCHAR(1000),
+                        photo2 VARCHAR(1000),
+                        photo3 VARCHAR(1000),
+                        city_id int NOT NULL,
+                        FOREIGN KEY (city_id) REFERENCES cities(id)
+                    );
+                    """
 
-            cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS criteria(
-                            id SERIAL PRIMARY KEY,
-                            user_id int NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                            gender_id int NOT NULL,
-                            status int NOT NULL,
-                            age_from int NOT NULL,
-                            age_to int NOT NULL,
-                            city_id int NOT NULL,
-                            has_photo int NOT NULL
-                        );
-                        """)
-
-            cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS favorites(
-                                id SERIAL PRIMARY KEY,
-                                user_id int NOT NULL,
-                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                first_name VARCHAR(50) NOT NULL,
-                                last_name VARCHAR(50) NOT NULL,
-                                age int NOT NULL,
-                                gender_id int NOT NULL,
-                                FOREIGN KEY (gender_id) REFERENCES genders(id),
-                                profile VARCHAR(50) NOT NULL,
-                                photo1 VARCHAR(1000),
-                                photo2 VARCHAR(1000),
-                                photo3 VARCHAR(1000),
-                                city_id int NOT NULL,
-                                FOREIGN KEY (city_id) REFERENCES cities(id)
-                            );
-                            """)
-
-            cursor.execute("""
-                           CREATE TABLE IF NOT EXISTS exceptions(
-                                id SERIAL PRIMARY KEY,
-                                user_id int NOT NULL,
-                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                first_name VARCHAR(50) NOT NULL,
-                                last_name VARCHAR(50) NOT NULL,
-                                age int NOT NULL,
-                                gender_id int NOT NULL,
-                                FOREIGN KEY (gender_id) REFERENCES genders(id),
-                                profile VARCHAR(50) NOT NULL,
-                                photo1 VARCHAR(1000),
-                                photo2 VARCHAR(1000),
-                                photo3 VARCHAR(1000),
-                                city_id int NOT NULL,
-                                FOREIGN KEY (city_id) REFERENCES cities(id)
-                            );
-                            """)
+            cursor.execute(sql)
             self.connect.commit()
 
         # Проверим наличие всех нужных тамблиц
         for name_table in self.tables:
-            if not self.exists_tables(name_table):
+            if not self.exists_table(name_table):
                 self.error = 'Не все таблицы созданы'
 
     def fill_tables(self):

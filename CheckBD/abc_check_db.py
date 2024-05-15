@@ -37,7 +37,7 @@ class ABCCheckDb(ABC):
             pass
 
     @abstractmethod
-    def exists_tables(self, name_table) -> bool:
+    def exists_table(self, name_table) -> bool:
         """
         Проверка, все ли нужные таблицы созданы
         Returns:

@@ -2,13 +2,13 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from Criteria import Criteria
-from Repository.ABCRepository import ABCRepository
+from criteria import Criteria
+from Repository.adc_repository import ABCRepository
 import os
 
-from Repository.CardExceptions import CardExceptions
-from Repository.CardFavorites import CardFavorites
-from User import User
+from Repository.card_exceptions import CardExceptions
+from Repository.card_favorites import CardFavorites
+from user import User
 
 
 class SQLRepository(ABCRepository):

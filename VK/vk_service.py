@@ -3,9 +3,9 @@ from datetime import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 
-from Criteria import Criteria
-from Repository.CardFind import CardFind
-from Result import Result
+from criteria import Criteria
+from Repository.card_find import CardFind
+from result import Result
 
 
 class VKService:
