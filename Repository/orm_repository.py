@@ -9,7 +9,7 @@ from User import User
 from Repository.CardFavorites import CardFavorites
 from Repository.CardExceptions import CardExceptions
 from Repository.ABCRepository import ABCRepository
-from CheckBD.StructureDBORM import Users, Cities, Criteria, Favorites, Exceptions
+from CheckBD.structure_db_orm import Users, Cities, Criteria, Favorites, Exceptions
 
 
 class ORMRepository(ABCRepository):

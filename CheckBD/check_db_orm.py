@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy_utils import database_exists, create_database
 
 from CheckBD.ABCCheckDb import ABCCheckDb
-from CheckBD.StructureDBORM import form_tables, Genders
+from CheckBD.structure_db_orm import form_tables, Genders
 
 
 class CheckDBORM(ABCCheckDb):
