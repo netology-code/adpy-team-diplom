@@ -12,7 +12,7 @@ from Repository.ABCRepository import ABCRepository
 from Repository.CardExceptions import CardExceptions
 from Repository.CardFavorites import CardFavorites
 
-from User import User
+from user import User
 
 load_dotenv()
 
