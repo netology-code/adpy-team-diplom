@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from User import User
-from Repository.CardFavorites import CardFavorites
-from Repository.CardExceptions import CardExceptions
-from Repository.ABCRepository import ABCRepository
+from user import User
+from Repository.card_favorites import CardFavorites
+from Repository.card_exceptions import CardExceptions
+from Repository.abc_repository import ABCRepository
 from CheckBD.structure_db_orm import Users, Cities, Criteria, Favorites, Exceptions
 
 

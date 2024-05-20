@@ -1,20 +1,10 @@
 import json
-from io import BytesIO
-
-import requests
-import vk_api
 from vk_api import VkUpload
 from vk_api.longpoll import VkLongPoll, VkEventType
-from dotenv import load_dotenv
-import os
 import VK.vk_messages as ms
-from CheckBD.abc_check_db import ABCCheckDb
-#from CheckBD.check_DBORM import CheckDBORM
+from CheckBD.check_db_orm import CheckDBORM
 from CheckBD.check_db_sql import CheckDBSQL
-from Repository.abc_repository import ABCRepository
-from Repository.card_exceptions import CardExceptions
-from Repository.card_favorites import CardFavorites
-#from Repository.ORMRepository import ORMRepository
+from Repository.orm_repository import ORMRepository
 from Repository.sql_repository import SQLRepository
 from user import User
 from VK.vk_service import VKService
@@ -88,9 +78,9 @@ if __name__ == '__main__':
     if mch.realization == 'SQL':
         сheckDB = CheckDBSQL()
         repository = SQLRepository()
-    # else:
-    #     сheckDB = CheckDBORM()
-    #     repository = ORMRepository()
+    else:
+        сheckDB = CheckDBORM()
+        repository = ORMRepository()
 
 
     if сheckDB.check_db():

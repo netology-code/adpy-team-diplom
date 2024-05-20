@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy_utils import database_exists, create_database
 
-from CheckBD.ABCCheckDb import ABCCheckDb
+from CheckBD.abc_check_db import ABCCheckDb
 from CheckBD.structure_db_orm import form_tables, Genders
 
 
