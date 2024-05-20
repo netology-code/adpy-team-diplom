@@ -1,4 +1,4 @@
-from Criteria import Criteria
+from criteria import Criteria
 
 
 class User:

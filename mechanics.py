@@ -7,10 +7,10 @@ from vk_api.longpoll import VkLongPoll
 from dotenv import load_dotenv
 import os
 import VK.vk_messages as ms
-from CheckBD.ABCCheckDb import ABCCheckDb
-from Repository.ABCRepository import ABCRepository
-from Repository.CardExceptions import CardExceptions
-from Repository.CardFavorites import CardFavorites
+from CheckBD.abc_check_db import ABCCheckDb
+from Repository.sql_repository import ABCRepository
+from Repository.card_exceptions import CardExceptions
+from Repository.card_favorites import CardFavorites
 
 from user import User
 
