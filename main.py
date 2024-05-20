@@ -8,16 +8,16 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from dotenv import load_dotenv
 import os
 import VK.vk_messages as ms
-from CheckBD.ABCCheckDb import ABCCheckDb
-from CheckBD.CheckDBORM import CheckDBORM
-from CheckBD.CheckDBSQL import CheckDBSQL
-from Repository.ABCRepository import ABCRepository
-from Repository.CardExceptions import CardExceptions
-from Repository.CardFavorites import CardFavorites
-from Repository.ORMRepository import ORMRepository
-from Repository.SQLRepository import SQLRepository
-from User import User
-from VK.VKService import VKService
+from CheckBD.abc_check_db import ABCCheckDb
+#from CheckBD.check_DBORM import CheckDBORM
+from CheckBD.check_db_sql import CheckDBSQL
+from Repository.abc_repository import ABCRepository
+from Repository.card_exceptions import CardExceptions
+from Repository.card_favorites import CardFavorites
+#from Repository.ORMRepository import ORMRepository
+from Repository.sql_repository import SQLRepository
+from user import User
+from VK.vk_service import VKService
 
 import mechanics as mch
 
@@ -88,9 +88,9 @@ if __name__ == '__main__':
     if mch.realization == 'SQL':
         сheckDB = CheckDBSQL()
         repository = SQLRepository()
-    else:
-        сheckDB = CheckDBORM()
-        repository = ORMRepository()
+    # else:
+    #     сheckDB = CheckDBORM()
+    #     repository = ORMRepository()
 
 
     if сheckDB.check_db():

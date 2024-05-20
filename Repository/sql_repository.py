@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 from criteria import Criteria
-from Repository.adc_repository import ABCRepository
+from Repository.abc_repository import ABCRepository
 import os
 
 from Repository.card_exceptions import CardExceptions
