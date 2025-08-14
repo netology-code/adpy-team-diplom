@@ -42,9 +42,9 @@ def main_keyboard():
     keyboard.add_button("В избранное", color=VkKeyboardColor.POSITIVE)
     keyboard.add_line()
     keyboard.add_button("Избранное", color=VkKeyboardColor.SECONDARY)
-    keyboard.add_button("Стоп", color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_button("В чёрный список", color=VkKeyboardColor.NEGATIVE)
     keyboard.add_line()
-    keyboard.add_button("Чёрный список", color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_button("Помощь", color=VkKeyboardColor.SECONDARY)
     return keyboard.get_keyboard()
 
 
@@ -246,8 +246,8 @@ for event in longpoll.listen():
                     user_id, "У тебя пока нет избранных.", keyboard=main_keyboard()
                 )
 
-        # ---------------- Кнопка "Чёрный список" ----------------
-        elif text == "чёрный список":
+        # ---------------- Кнопка "В чёрный список" ----------------
+        elif text == "в чёрный список":
             if state["shown_ids"]:
                 last_vk_id = state["shown_ids"][-1]
                 add_to_blacklist(state["user_pk"], last_vk_id)
@@ -262,9 +262,15 @@ for event in longpoll.listen():
                     keyboard=main_keyboard(),
                 )
 
-        # ---------------- Кнопка "Стоп" ----------------
-        elif text == "стоп":
-            send_message(user_id, "Окей, останавливаюсь", keyboard=None)
+        # ---------------- Кнопка "Помощь" ----------------
+        elif text == "помощь":
+            send_message(user_id,"""Привет! Вот что я умею:
+/start — начать поиск кандидатов
+Далее — показать следующего кандидата
+В избранное — добавить кандидата в свой список
+Избранное — посмотреть список избранных
+В чёрный список — скрыть кандидата навсегда
+Совет: кнопки под сообщением помогут быстрее управлять ботом""", keyboard=None)
 
         # ---------------- Неизвестная команда ----------------
         else:
