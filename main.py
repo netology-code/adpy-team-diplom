@@ -106,12 +106,10 @@ def get_top_photos(user_id):
 def show_next_candidate(user_id):
     state = user_states[user_id]
     results = state["results"]
-
+    bl_vk_ids = {b.candidate.vk_id for b in get_blacklist(state["user_pk"])}
     while results:
         candidate = results.pop(0)
-        if candidate["id"] not in state["shown_ids"] and not any(
-            b.candidate_id == candidate["id"] for b in get_blacklist(state["user_pk"])
-        ):
+        if candidate["id"] not in state["shown_ids"] and candidate["id"] not in bl_vk_ids:
             state["shown_ids"].append(candidate["id"])
             add_candidate(
                 user_id=state["user_pk"],
@@ -136,7 +134,13 @@ def show_next_candidate(user_id):
     new_results = search_users(
         info["sex"], info["age_from"], info["age_to"], info["city_id"]
     )
-    new_results = [c for c in new_results if c["id"] not in state["shown_ids"]]
+
+    # Убираем уже показанных и тех, кто в чёрном списке
+    new_results = [
+        c for c in new_results
+        if c["id"] not in state["shown_ids"] and c["id"] not in bl_vk_ids
+    ]
+
     if new_results:
         state["results"] = new_results
         show_next_candidate(user_id)
@@ -145,7 +149,7 @@ def show_next_candidate(user_id):
 
 
 # ---------------- Основной цикл бота ----------------
-print("✅ Бот запущен...")
+print("Бот запущен")
 for event in longpoll.listen():
     if event.type == VkBotEventType.MESSAGE_NEW:
         user_id = event.message["from_id"]
@@ -217,7 +221,7 @@ for event in longpoll.listen():
                 last_id = state["shown_ids"][-1]
                 add_to_favorites(state["user_pk"], last_id)
                 send_message(
-                    user_id, "Добавил в избранное ✅", keyboard=main_keyboard()
+                    user_id, "Добавил в избранное", keyboard=main_keyboard()
                 )
             else:
                 send_message(
@@ -248,7 +252,7 @@ for event in longpoll.listen():
                 last_vk_id = state["shown_ids"][-1]
                 add_to_blacklist(state["user_pk"], last_vk_id)
                 send_message(
-                    user_id, "Добавил в чёрный список ⛔", keyboard=main_keyboard()
+                    user_id, "Добавил в чёрный список", keyboard=main_keyboard()
                 )
                 show_next_candidate(user_id)
             else:
@@ -260,10 +264,10 @@ for event in longpoll.listen():
 
         # ---------------- Кнопка "Стоп" ----------------
         elif text == "стоп":
-            send_message(user_id, "Окей, останавливаюсь 👋", keyboard=None)
+            send_message(user_id, "Окей, останавливаюсь", keyboard=None)
 
         # ---------------- Неизвестная команда ----------------
         else:
             send_message(
-                user_id, "Выбери действие с кнопок ниже 👇", keyboard=main_keyboard()
+                user_id, "Выбери действие с кнопок ниже", keyboard=main_keyboard()
             )
