@@ -35,6 +35,14 @@ longpoll = VkBotLongPoll(vk_group_session, GROUP_ID)
 
 # ---------------- Функция для вычисления возраста ----------------
 def calculate_age(bdate_str):
+    """Вычисляет возраст по дате рождения.
+
+        Args:
+            bdate_str (str): Дата рождения в формате 'DD.MM.YYYY'.
+
+        Returns:
+            int | None: Возраст в годах или None, если дата некорректна.
+        """
     try:
         if bdate_str and len(bdate_str.split(".")) == 3:
             day, month, year = map(int, bdate_str.split("."))
