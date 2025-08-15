@@ -4,6 +4,7 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from dotenv import load_dotenv
+from datetime import datetime
 
 from db import (
     create_user,
@@ -30,6 +31,21 @@ vk_user_session = vk_api.VkApi(token=TOKEN_USER)
 vk_user = vk_user_session.get_api()
 
 longpoll = VkBotLongPoll(vk_group_session, GROUP_ID)
+
+
+# ---------------- Функция для вычисления возраста ----------------
+def calculate_age(bdate_str):
+    """Вычисляет возраст по дате рождения в формате 'DD.MM.YYYY'"""
+    try:
+        if bdate_str and len(bdate_str.split(".")) == 3:
+            day, month, year = map(int, bdate_str.split("."))
+            today = datetime.today()
+            age = today.year - year - ((today.month, today.day) < (month, day))
+            return age
+    except Exception:
+        pass
+    return None
+
 
 # ---------------- Состояние пользователей ----------------
 user_states = {}
@@ -73,7 +89,7 @@ def search_users(sex, age_from, age_to, city_id):
     try:
         results = vk_user.users.search(
             count=50,
-            fields="city,sex,photo_id",
+            fields="city,sex,photo_id,bdate",
             sex=sex,
             age_from=age_from,
             age_to=age_to,
@@ -109,15 +125,22 @@ def show_next_candidate(user_id):
     bl_vk_ids = {b.candidate.vk_id for b in get_blacklist(state["user_pk"])}
     while results:
         candidate = results.pop(0)
-        if candidate["id"] not in state["shown_ids"] and candidate["id"] not in bl_vk_ids:
+        if (
+            candidate["id"] not in state["shown_ids"]
+            and candidate["id"] not in bl_vk_ids
+        ):
             state["shown_ids"].append(candidate["id"])
+
+            # вычисляем возраст кандидата
+            age = calculate_age(candidate.get("bdate"))
+
             add_candidate(
                 user_id=state["user_pk"],
                 vk_id=candidate["id"],
                 first_name=candidate["first_name"],
                 last_name=candidate["last_name"],
                 city=candidate.get("city", {}).get("title"),
-                age=None,
+                age=age,
                 gender=candidate.get("sex"),
             )
             photos = get_top_photos(candidate["id"])
@@ -137,7 +160,8 @@ def show_next_candidate(user_id):
 
     # Убираем уже показанных и тех, кто в чёрном списке
     new_results = [
-        c for c in new_results
+        c
+        for c in new_results
         if c["id"] not in state["shown_ids"] and c["id"] not in bl_vk_ids
     ]
 
@@ -166,7 +190,7 @@ for event in longpoll.listen():
                         first_name=info["first_name"],
                         last_name=info["last_name"],
                         city=info.get("city", {}).get("title"),
-                        age=None,
+                        age=calculate_age(info.get("bdate")),  # сохраняем возраст
                         gender=info.get("sex"),
                     )
                 else:
@@ -220,9 +244,7 @@ for event in longpoll.listen():
             if state["shown_ids"]:
                 last_id = state["shown_ids"][-1]
                 add_to_favorites(state["user_pk"], last_id)
-                send_message(
-                    user_id, "Добавил в избранное", keyboard=main_keyboard()
-                )
+                send_message(user_id, "Добавил в избранное", keyboard=main_keyboard())
             else:
                 send_message(
                     user_id, "Нет кандидата для добавления.", keyboard=main_keyboard()
@@ -264,13 +286,17 @@ for event in longpoll.listen():
 
         # ---------------- Кнопка "Помощь" ----------------
         elif text == "помощь":
-            send_message(user_id,"""Привет! Вот что я умею:
+            send_message(
+                user_id,
+                """Привет! Вот что я умею:
 /start — начать поиск кандидатов
 Далее — показать следующего кандидата
 В избранное — добавить кандидата в свой список
 Избранное — посмотреть список избранных
 В чёрный список — скрыть кандидата навсегда
-Совет: кнопки под сообщением помогут быстрее управлять ботом""", keyboard=None)
+Совет: кнопки под сообщением помогут быстрее управлять ботом""",
+                keyboard=None,
+            )
 
         # ---------------- Неизвестная команда ----------------
         else:
