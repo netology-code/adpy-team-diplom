@@ -112,6 +112,14 @@ def search_users(sex, age_from, age_to, city_id):
 
 # ---------------- Получение топ-3 фото ----------------
 def get_top_photos(user_id):
+    """Возвращает топ-3 фото пользователя по лайкам.
+
+        Args:
+            user_id (int): ID пользователя ВКонтакте.
+
+        Returns:
+            list[str]: Список строк с attachment фото.
+        """
     try:
         photos = vk_user.photos.get(owner_id=user_id, album_id="profile", extended=1)
         sorted_photos = sorted(
