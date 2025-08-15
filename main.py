@@ -35,7 +35,14 @@ longpoll = VkBotLongPoll(vk_group_session, GROUP_ID)
 
 # ---------------- Функция для вычисления возраста ----------------
 def calculate_age(bdate_str):
-    """Вычисляет возраст по дате рождения в формате 'DD.MM.YYYY'"""
+    """Вычисляет возраст по дате рождения.
+
+    Args:
+        bdate_str (str): Дата рождения в формате 'DD.MM.YYYY'.
+
+    Returns:
+        int | None: Возраст в годах или None, если дата некорректна.
+    """
     try:
         if bdate_str and len(bdate_str.split(".")) == 3:
             day, month, year = map(int, bdate_str.split("."))
@@ -53,6 +60,11 @@ user_states = {}
 
 # ---------------- Клавиатура ----------------
 def main_keyboard():
+    """Создаёт основную клавиатуру бота.
+
+    Returns:
+        dict: JSON-объект клавиатуры для VK API.
+    """
     keyboard = VkKeyboard(one_time=False)
     keyboard.add_button("Далее", color=VkKeyboardColor.PRIMARY)
     keyboard.add_button("В избранное", color=VkKeyboardColor.POSITIVE)
@@ -66,6 +78,14 @@ def main_keyboard():
 
 # ---------------- Отправка сообщений ----------------
 def send_message(user_id, text, attachments=None, keyboard=None):
+    """Отправляет сообщение пользователю.
+
+    Args:
+        user_id (int): ID пользователя ВКонтакте.
+        text (str): Текст сообщения.
+        attachments (list[str], optional): Список вложений VK (например, фото).
+        keyboard (dict, optional): Клавиатура VK.
+    """
     params = {"user_id": user_id, "message": text, "random_id": get_random_id()}
     if attachments:
         params["attachment"] = ",".join(attachments)
@@ -76,6 +96,14 @@ def send_message(user_id, text, attachments=None, keyboard=None):
 
 # ---------------- Получение информации о пользователе ----------------
 def get_user_info(user_id):
+    """Получает информацию о пользователе из VK API.
+
+    Args:
+        user_id (int): ID пользователя ВКонтакте.
+
+    Returns:
+        dict | None: Словарь с информацией о пользователе или None при ошибке.
+    """
     try:
         info = vk_user.users.get(user_ids=user_id, fields="sex,bdate,city")[0]
         return info
@@ -86,6 +114,17 @@ def get_user_info(user_id):
 
 # ---------------- Поиск кандидатов ----------------
 def search_users(sex, age_from, age_to, city_id):
+    """Ищет кандидатов в VK по заданным параметрам.
+
+    Args:
+        sex (int): Пол (1 — женский, 2 — мужской).
+        age_from (int): Минимальный возраст.
+        age_to (int): Максимальный возраст.
+        city_id (int): ID города VK.
+
+    Returns:
+        list[dict]: Список найденных кандидатов.
+    """
     try:
         results = vk_user.users.search(
             count=50,
@@ -106,6 +145,14 @@ def search_users(sex, age_from, age_to, city_id):
 
 # ---------------- Получение топ-3 фото ----------------
 def get_top_photos(user_id):
+    """Возвращает топ-3 фото пользователя по лайкам.
+
+    Args:
+        user_id (int): ID пользователя ВКонтакте.
+
+    Returns:
+        list[str]: Список строк с attachment фото.
+    """
     try:
         photos = vk_user.photos.get(owner_id=user_id, album_id="profile", extended=1)
         sorted_photos = sorted(
@@ -120,6 +167,11 @@ def get_top_photos(user_id):
 
 # ---------------- Показ следующего кандидата ----------------
 def show_next_candidate(user_id):
+    """Показывает следующего кандидата пользователю.
+
+    Args:
+        user_id (int): ID пользователя ВКонтакте.
+    """
     state = user_states[user_id]
     results = state["results"]
     bl_vk_ids = {b.candidate.vk_id for b in get_blacklist(state["user_pk"])}
@@ -174,6 +226,18 @@ def show_next_candidate(user_id):
 
 # ---------------- Основной цикл бота ----------------
 print("Бот запущен")
+
+"""
+Основной цикл прослушивания событий VK.
+Обрабатывает входящие сообщения и выполняет соответствующие действия:
+- /start, привет, начать — запускает поиск кандидатов;
+- Далее — показывает следующего кандидата;
+- В избранное — добавляет текущего кандидата в список избранных;
+- Избранное — выводит список избранных кандидатов;
+- В чёрный список — скрывает кандидата;
+- Помощь — выводит список доступных команд.
+"""
+
 for event in longpoll.listen():
     if event.type == VkBotEventType.MESSAGE_NEW:
         user_id = event.message["from_id"]

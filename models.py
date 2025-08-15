@@ -6,6 +6,21 @@ Base = declarative_base()
 
 
 class User(Base):
+    """Модель пользователя бота.
+
+    Attributes:
+        id (int): Первичный ключ.
+        vk_id (int): ID пользователя ВКонтакте.
+        first_name (str): Имя.
+        last_name (str): Фамилия.
+        city (str): Город.
+        age (int): Возраст.
+        gender (str): Пол.
+        candidates (list[Candidate]): Кандидаты, связанные с пользователем.
+        favorites (list[Favorite]): Избранные кандидаты пользователя.
+        blacklist (list[Blacklist]): Чёрный список пользователя.
+    """
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -28,6 +43,22 @@ class User(Base):
 
 
 class Candidate(Base):
+    """Модель кандидата для знакомств.
+
+    Attributes:
+        id (int): Первичный ключ.
+        vk_id (int): ID кандидата ВКонтакте.
+        first_name (str): Имя.
+        last_name (str): Фамилия.
+        city (str): Город.
+        age (int): Возраст.
+        gender (str): Пол.
+        user_id (int): ID пользователя (FK).
+        owner (User): Владелец кандидата.
+        favorite_in (list[Favorite]): Ссылки на избранное.
+        blacklist_in (list[Blacklist]): Ссылки на чёрный список.
+    """
+
     __tablename__ = "candidate"
 
     id = Column(Integer, primary_key=True)
@@ -51,6 +82,16 @@ class Candidate(Base):
 
 
 class Favorite(Base):
+    """Модель избранного кандидата.
+
+    Attributes:
+        id (int): Первичный ключ.
+        candidate_id (int): ID кандидата (FK).
+        user_id (int): ID пользователя (FK).
+        candidate (Candidate): Объект кандидата.
+        user (User): Объект пользователя.
+    """
+
     __tablename__ = "favorite"
 
     id = Column(Integer, primary_key=True)
@@ -66,6 +107,16 @@ class Favorite(Base):
 
 
 class Blacklist(Base):
+    """Модель чёрного списка.
+
+    Attributes:
+        id (int): Первичный ключ.
+        candidate_id (int): ID кандидата (FK).
+        user_id (int): ID пользователя (FK).
+        candidate (Candidate): Объект кандидата.
+        user (User): Объект пользователя.
+    """
+
     __tablename__ = "blacklist"
 
     id = Column(Integer, primary_key=True)
