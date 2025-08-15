@@ -281,10 +281,17 @@ for event in longpoll.listen():
             if info:
                 sex = 1 if info["sex"] == 2 else 2
                 city_id = info.get("city", {}).get("id", None)
+                user_age = calculate_age(info.get("bdate"))
+                if user_age:
+                    age_from = max(18, user_age - 5)
+                    age_to = min(70, user_age + 5)
+                else:
+                    age_from, age_to = 18, 35
+
                 state["search_params"] = {
                     "sex": sex,
-                    "age_from": 18,
-                    "age_to": 35,
+                    "age_from": age_from,
+                    "age_to": age_to,
                     "city_id": city_id,
                 }
                 state["shown_ids"] = []
