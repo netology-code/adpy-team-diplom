@@ -52,7 +52,11 @@ user_states = {}
 
 # ---------------- Клавиатуры ----------------
 def start_keyboard():
-    """Клавиатура только с кнопкой Начать"""
+    """Создаёт основную клавиатуру бота.
+
+        Returns:
+            dict: JSON-объект клавиатуры для VK API.
+        """
     keyboard = VkKeyboard(one_time=True)
     keyboard.add_button("Начать", color=VkKeyboardColor.POSITIVE)
     return keyboard.get_keyboard()
