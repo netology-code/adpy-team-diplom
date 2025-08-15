@@ -92,6 +92,17 @@ def get_user_info(user_id):
 
 # ---------------- Поиск кандидатов ----------------
 def search_users(sex, age_from, age_to, city_id):
+    """Ищет кандидатов в VK по заданным параметрам.
+
+        Args:
+            sex (int): Пол (1 — женский, 2 — мужской).
+            age_from (int): Минимальный возраст.
+            age_to (int): Максимальный возраст.
+            city_id (int): ID города VK.
+
+        Returns:
+            list[dict]: Список найденных кандидатов.
+        """
     try:
         results = vk_user.users.search(
             count=50,
