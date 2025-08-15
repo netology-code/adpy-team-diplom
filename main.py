@@ -35,14 +35,6 @@ longpoll = VkBotLongPoll(vk_group_session, GROUP_ID)
 
 # ---------------- Функция для вычисления возраста ----------------
 def calculate_age(bdate_str):
-    """Вычисляет возраст по дате рождения.
-
-    Args:
-        bdate_str (str): Дата рождения в формате 'DD.MM.YYYY'.
-
-    Returns:
-        int | None: Возраст в годах или None, если дата некорректна.
-    """
     try:
         if bdate_str and len(bdate_str.split(".")) == 3:
             day, month, year = map(int, bdate_str.split("."))
@@ -58,13 +50,15 @@ def calculate_age(bdate_str):
 user_states = {}
 
 
-# ---------------- Клавиатура ----------------
-def main_keyboard():
-    """Создаёт основную клавиатуру бота.
+# ---------------- Клавиатуры ----------------
+def start_keyboard():
+    """Клавиатура только с кнопкой Начать"""
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button("Начать", color=VkKeyboardColor.POSITIVE)
+    return keyboard.get_keyboard()
 
-    Returns:
-        dict: JSON-объект клавиатуры для VK API.
-    """
+
+def main_keyboard():
     keyboard = VkKeyboard(one_time=False)
     keyboard.add_button("Далее", color=VkKeyboardColor.PRIMARY)
     keyboard.add_button("В избранное", color=VkKeyboardColor.POSITIVE)
@@ -78,14 +72,6 @@ def main_keyboard():
 
 # ---------------- Отправка сообщений ----------------
 def send_message(user_id, text, attachments=None, keyboard=None):
-    """Отправляет сообщение пользователю.
-
-    Args:
-        user_id (int): ID пользователя ВКонтакте.
-        text (str): Текст сообщения.
-        attachments (list[str], optional): Список вложений VK (например, фото).
-        keyboard (dict, optional): Клавиатура VK.
-    """
     params = {"user_id": user_id, "message": text, "random_id": get_random_id()}
     if attachments:
         params["attachment"] = ",".join(attachments)
@@ -96,14 +82,6 @@ def send_message(user_id, text, attachments=None, keyboard=None):
 
 # ---------------- Получение информации о пользователе ----------------
 def get_user_info(user_id):
-    """Получает информацию о пользователе из VK API.
-
-    Args:
-        user_id (int): ID пользователя ВКонтакте.
-
-    Returns:
-        dict | None: Словарь с информацией о пользователе или None при ошибке.
-    """
     try:
         info = vk_user.users.get(user_ids=user_id, fields="sex,bdate,city")[0]
         return info
@@ -114,17 +92,6 @@ def get_user_info(user_id):
 
 # ---------------- Поиск кандидатов ----------------
 def search_users(sex, age_from, age_to, city_id):
-    """Ищет кандидатов в VK по заданным параметрам.
-
-    Args:
-        sex (int): Пол (1 — женский, 2 — мужской).
-        age_from (int): Минимальный возраст.
-        age_to (int): Максимальный возраст.
-        city_id (int): ID города VK.
-
-    Returns:
-        list[dict]: Список найденных кандидатов.
-    """
     try:
         results = vk_user.users.search(
             count=50,
@@ -145,14 +112,6 @@ def search_users(sex, age_from, age_to, city_id):
 
 # ---------------- Получение топ-3 фото ----------------
 def get_top_photos(user_id):
-    """Возвращает топ-3 фото пользователя по лайкам.
-
-    Args:
-        user_id (int): ID пользователя ВКонтакте.
-
-    Returns:
-        list[str]: Список строк с attachment фото.
-    """
     try:
         photos = vk_user.photos.get(owner_id=user_id, album_id="profile", extended=1)
         sorted_photos = sorted(
@@ -167,14 +126,10 @@ def get_top_photos(user_id):
 
 # ---------------- Показ следующего кандидата ----------------
 def show_next_candidate(user_id):
-    """Показывает следующего кандидата пользователю.
-
-    Args:
-        user_id (int): ID пользователя ВКонтакте.
-    """
     state = user_states[user_id]
     results = state["results"]
     bl_vk_ids = {b.candidate.vk_id for b in get_blacklist(state["user_pk"])}
+
     while results:
         candidate = results.pop(0)
         if (
@@ -182,8 +137,6 @@ def show_next_candidate(user_id):
             and candidate["id"] not in bl_vk_ids
         ):
             state["shown_ids"].append(candidate["id"])
-
-            # вычисляем возраст кандидата
             age = calculate_age(candidate.get("bdate"))
 
             add_candidate(
@@ -204,19 +157,15 @@ def show_next_candidate(user_id):
             )
             return
 
-    # если кандидаты закончились, поиск новых
     info = state["search_params"]
     new_results = search_users(
         info["sex"], info["age_from"], info["age_to"], info["city_id"]
     )
-
-    # Убираем уже показанных и тех, кто в чёрном списке
     new_results = [
         c
         for c in new_results
         if c["id"] not in state["shown_ids"] and c["id"] not in bl_vk_ids
     ]
-
     if new_results:
         state["results"] = new_results
         show_next_candidate(user_id)
@@ -224,19 +173,8 @@ def show_next_candidate(user_id):
         send_message(user_id, "Кандидаты закончились.", keyboard=main_keyboard())
 
 
-# ---------------- Основной цикл бота ----------------
+# ---------------- Основной цикл ----------------
 print("Бот запущен")
-
-"""
-Основной цикл прослушивания событий VK.
-Обрабатывает входящие сообщения и выполняет соответствующие действия:
-- /start, привет, начать — запускает поиск кандидатов;
-- Далее — показывает следующего кандидата;
-- В избранное — добавляет текущего кандидата в список избранных;
-- Избранное — выводит список избранных кандидатов;
-- В чёрный список — скрывает кандидата;
-- Помощь — выводит список доступных команд.
-"""
 
 for event in longpoll.listen():
     if event.type == VkBotEventType.MESSAGE_NEW:
@@ -244,7 +182,6 @@ for event in longpoll.listen():
         text = event.message.get("text", "").strip().lower()
 
         if user_id not in user_states:
-            # создаём или получаем пользователя из БД
             user = get_user(user_id)
             if not user:
                 info = get_user_info(user_id)
@@ -254,19 +191,17 @@ for event in longpoll.listen():
                         first_name=info["first_name"],
                         last_name=info["last_name"],
                         city=info.get("city", {}).get("title"),
-                        age=calculate_age(info.get("bdate")),  # сохраняем возраст
+                        age=calculate_age(info.get("bdate")),
                         gender=info.get("sex"),
                     )
                 else:
                     send_message(
-                        user_id,
-                        "Не удалось получить твои данные.",
-                        keyboard=main_keyboard(),
+                        user_id, "Не удалось получить твои данные.", keyboard=start_keyboard()
                     )
                     continue
 
             user_states[user_id] = {
-                "step": 0,
+                "step": 0,   # 0 = старт, 1 = поиск идёт
                 "results": [],
                 "shown_ids": [],
                 "search_params": {},
@@ -276,53 +211,57 @@ for event in longpoll.listen():
         state = user_states[user_id]
 
         # ---------------- Команда /start ----------------
-        if text in ["/start", "привет", "начать"]:
+        if text in ["/start", "привет"] and state["step"] == 0:
+            send_message(
+                user_id,
+                """Привет! Я помогу найти интересных людей для знакомств 🎯
+
+        Вот что я умею:
+        - "Далее" — показать следующего кандидата
+        - "В избранное" — добавить кандидата в свой список
+        - "Избранное" — показать список избранных
+        - "В чёрный список" — скрыть кандидата
+        - "Помощь" — вывести список всех команд
+
+        Нажми "Начать", чтобы запустить поиск 👇""",
+                keyboard=start_keyboard(),
+            )
+
+        elif text == "начать" and state["step"] == 0:
             info = get_user_info(user_id)
             if info:
                 sex = 1 if info["sex"] == 2 else 2
                 city_id = info.get("city", {}).get("id", None)
-                user_age = calculate_age(info.get("bdate"))
-                if user_age:
-                    age_from = max(18, user_age - 5)
-                    age_to = min(70, user_age + 5)
-                else:
-                    age_from, age_to = 18, 35
-
                 state["search_params"] = {
                     "sex": sex,
-                    "age_from": age_from,
-                    "age_to": age_to,
+                    "age_from": 18,
+                    "age_to": 35,
                     "city_id": city_id,
                 }
                 state["shown_ids"] = []
+                state["step"] = 1  # переключаем в режим поиска
 
                 send_message(user_id, "Ищу кандидатов...", keyboard=main_keyboard())
                 state["results"] = search_users(**state["search_params"])
                 show_next_candidate(user_id)
             else:
-                send_message(
-                    user_id,
-                    "Не удалось получить твои данные.",
-                    keyboard=main_keyboard(),
-                )
+                send_message(user_id, "Не удалось получить твои данные.", keyboard=start_keyboard())
 
         # ---------------- Кнопка "Далее" ----------------
-        elif text == "далее":
+        elif text == "далее" and state["step"] == 1:
             show_next_candidate(user_id)
 
         # ---------------- Кнопка "В избранное" ----------------
-        elif text == "в избранное":
+        elif text == "в избранное" and state["step"] == 1:
             if state["shown_ids"]:
                 last_id = state["shown_ids"][-1]
                 add_to_favorites(state["user_pk"], last_id)
                 send_message(user_id, "Добавил в избранное", keyboard=main_keyboard())
             else:
-                send_message(
-                    user_id, "Нет кандидата для добавления.", keyboard=main_keyboard()
-                )
+                send_message(user_id, "Нет кандидата для добавления.", keyboard=main_keyboard())
 
         # ---------------- Кнопка "Избранное" ----------------
-        elif text == "избранное":
+        elif text == "избранное" and state["step"] == 1:
             fav_list = get_favorites(state["user_pk"])
             if fav_list:
                 for fav in fav_list:
@@ -335,42 +274,35 @@ for event in longpoll.listen():
                         keyboard=main_keyboard(),
                     )
             else:
-                send_message(
-                    user_id, "У тебя пока нет избранных.", keyboard=main_keyboard()
-                )
+                send_message(user_id, "У тебя пока нет избранных.", keyboard=main_keyboard())
 
         # ---------------- Кнопка "В чёрный список" ----------------
-        elif text == "в чёрный список":
+        elif text == "в чёрный список" and state["step"] == 1:
             if state["shown_ids"]:
                 last_vk_id = state["shown_ids"][-1]
                 add_to_blacklist(state["user_pk"], last_vk_id)
-                send_message(
-                    user_id, "Добавил в чёрный список", keyboard=main_keyboard()
-                )
+                send_message(user_id, "Добавил в чёрный список", keyboard=main_keyboard())
                 show_next_candidate(user_id)
             else:
-                send_message(
-                    user_id,
-                    "Нет кандидата для добавления в чёрный список.",
-                    keyboard=main_keyboard(),
-                )
+                send_message(user_id, "Нет кандидата для добавления в чёрный список.", keyboard=main_keyboard())
 
         # ---------------- Кнопка "Помощь" ----------------
         elif text == "помощь":
             send_message(
                 user_id,
-                """Привет! Вот что я умею:
-/start — начать поиск кандидатов
-Далее — показать следующего кандидата
-В избранное — добавить кандидата в свой список
-Избранное — посмотреть список избранных
-В чёрный список — скрыть кандидата навсегда
-Совет: кнопки под сообщением помогут быстрее управлять ботом""",
-                keyboard=None,
+                """Доступные команды:
+Далее — следующий кандидат
+В избранное — добавить кандидата
+Избранное — список избранных
+В чёрный список — скрыть кандидата
+""",
+                keyboard=main_keyboard() if state["step"] == 1 else start_keyboard(),
             )
 
         # ---------------- Неизвестная команда ----------------
         else:
             send_message(
-                user_id, "Выбери действие с кнопок ниже", keyboard=main_keyboard()
+                user_id,
+                "Выбери действие с кнопок ниже",
+                keyboard=main_keyboard() if state["step"] == 1 else start_keyboard(),
             )
