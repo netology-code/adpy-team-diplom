@@ -82,6 +82,14 @@ def send_message(user_id, text, attachments=None, keyboard=None):
 
 # ---------------- Получение информации о пользователе ----------------
 def get_user_info(user_id):
+    """Получает информацию о пользователе из VK API.
+
+        Args:
+            user_id (int): ID пользователя ВКонтакте.
+
+        Returns:
+            dict | None: Словарь с информацией о пользователе или None при ошибке.
+        """
     try:
         info = vk_user.users.get(user_ids=user_id, fields="sex,bdate,city")[0]
         return info
