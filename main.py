@@ -174,7 +174,11 @@ def get_top_photos(user_id):
 
 # ---------------- Показ следующего кандидата ----------------
 def show_next_candidate(user_id):
-    """Показывает случайного кандидата пользователю."""
+    """Показывает следующего кандидата пользователю.
+
+    Args:
+        user_id (int): ID пользователя ВКонтакте.
+    """
     state = user_states[user_id]
     results = state["results"]
     bl_vk_ids = {b.candidate.vk_id for b in get_blacklist(state["user_pk"])}
