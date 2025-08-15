@@ -5,6 +5,7 @@ from vk_api.utils import get_random_id
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from dotenv import load_dotenv
 from datetime import datetime
+import random
 
 from db import (
     create_user,
@@ -173,56 +174,58 @@ def get_top_photos(user_id):
 
 # ---------------- Показ следующего кандидата ----------------
 def show_next_candidate(user_id):
-    """Показывает следующего кандидата пользователю.
-
-    Args:
-        user_id (int): ID пользователя ВКонтакте.
-    """
+    """Показывает случайного кандидата пользователю."""
     state = user_states[user_id]
     results = state["results"]
     bl_vk_ids = {b.candidate.vk_id for b in get_blacklist(state["user_pk"])}
 
-    while results:
-        candidate = results.pop(0)
-        if (
-            candidate["id"] not in state["shown_ids"]
-            and candidate["id"] not in bl_vk_ids
-        ):
-            state["shown_ids"].append(candidate["id"])
-            age = calculate_age(candidate.get("bdate"))
-
-            add_candidate(
-                user_id=state["user_pk"],
-                vk_id=candidate["id"],
-                first_name=candidate["first_name"],
-                last_name=candidate["last_name"],
-                city=candidate.get("city", {}).get("title"),
-                age=age,
-                gender=candidate.get("sex"),
-            )
-            photos = get_top_photos(candidate["id"])
-            send_message(
-                user_id,
-                f"{candidate['first_name']} {candidate['last_name']}\nhttps://vk.com/id{candidate['id']}",
-                attachments=photos,
-                keyboard=main_keyboard(),
-            )
-            return
-
-    info = state["search_params"]
-    new_results = search_users(
-        info["sex"], info["age_from"], info["age_to"], info["city_id"]
-    )
-    new_results = [
-        c
-        for c in new_results
+    # фильтруем уже показанных и из ЧС
+    candidates = [
+        c for c in results
         if c["id"] not in state["shown_ids"] and c["id"] not in bl_vk_ids
     ]
-    if new_results:
+
+    if not candidates:
+        # если кандидаты закончились, поиск новых
+        info = state["search_params"]
+        new_results = search_users(
+            info["sex"], info["age_from"], info["age_to"], info["city_id"]
+        )
+        candidates = [
+            c for c in new_results
+            if c["id"] not in state["shown_ids"] and c["id"] not in bl_vk_ids
+        ]
+
+        if not candidates:
+            send_message(user_id, "Кандидаты закончились.", keyboard=main_keyboard())
+            return
+
         state["results"] = new_results
-        show_next_candidate(user_id)
-    else:
-        send_message(user_id, "Кандидаты закончились.", keyboard=main_keyboard())
+
+    # выбираем случайного кандидата
+    candidate = random.choice(candidates)
+    state["shown_ids"].append(candidate["id"])
+
+    # вычисляем возраст
+    age = calculate_age(candidate.get("bdate"))
+
+    add_candidate(
+        user_id=state["user_pk"],
+        vk_id=candidate["id"],
+        first_name=candidate["first_name"],
+        last_name=candidate["last_name"],
+        city=candidate.get("city", {}).get("title"),
+        age=age,
+        gender=candidate.get("sex"),
+    )
+
+    photos = get_top_photos(candidate["id"])
+    send_message(
+        user_id,
+        f"{candidate['first_name']} {candidate['last_name']}\nhttps://vk.com/id{candidate['id']}",
+        attachments=photos,
+        keyboard=main_keyboard(),
+    )
 
 
 # ---------------- Основной цикл ----------------
