@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+venv/
+.venv/
+instance/
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
+dist/
+build/
+*.egg-info/
+
+# Pytest cache
+.pytest_cache/
+
+# logs
+*.log
+
