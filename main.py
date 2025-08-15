@@ -72,6 +72,14 @@ def main_keyboard():
 
 # ---------------- Отправка сообщений ----------------
 def send_message(user_id, text, attachments=None, keyboard=None):
+    """Отправляет сообщение пользователю.
+
+        Args:
+            user_id (int): ID пользователя ВКонтакте.
+            text (str): Текст сообщения.
+            attachments (list[str], optional): Список вложений VK (например, фото).
+            keyboard (dict, optional): Клавиатура VK.
+        """
     params = {"user_id": user_id, "message": text, "random_id": get_random_id()}
     if attachments:
         params["attachment"] = ",".join(attachments)
