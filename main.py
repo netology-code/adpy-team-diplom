@@ -6,6 +6,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from dotenv import load_dotenv
 from datetime import datetime
 import random
+import logging
 
 from db import (
     create_user,
@@ -33,6 +34,12 @@ vk_user = vk_user_session.get_api()
 
 longpoll = VkBotLongPoll(vk_group_session, GROUP_ID)
 
+# ---------------- Логирование ----------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logging.info("Бот запущен")
 
 # ---------------- Функция для вычисления возраста ----------------
 def calculate_age(bdate_str):
@@ -98,8 +105,11 @@ def send_message(user_id, text, attachments=None, keyboard=None):
         params["attachment"] = ",".join(attachments)
     if keyboard:
         params["keyboard"] = keyboard
-    vk_group.messages.send(**params)
-
+    try:
+        vk_group.messages.send(**params)
+        
+    except Exception as e:
+        logging.error(f"[Ошибка отправки сообщения пользователю {user_id}] {e}")
 
 # ---------------- Получение информации о пользователе ----------------
 def get_user_info(user_id):
@@ -113,9 +123,10 @@ def get_user_info(user_id):
         """
     try:
         info = vk_user.users.get(user_ids=user_id, fields="sex,bdate,city")[0]
+        logging.info(f"Получена информация о пользователе {user_id}")
         return info
     except Exception as e:
-        print(f"[Ошибка get_user_info] {e}")
+        logging.error(f"[Ошибка get_user_info для {user_id}] {e}")
         return None
 
 
@@ -144,9 +155,10 @@ def search_users(sex, age_from, age_to, city_id):
             status=1,
             sort=0,
         )
+        logging.info(f"Поиск кандидатов завершён, найдено {len(results.get('items', []))}")
         return results.get("items", [])
     except Exception as e:
-        print(f"[Ошибка search_users] {e}")
+        logging.error(f"[Ошибка search_users] {e}")
         return []
 
 
@@ -168,7 +180,7 @@ def get_top_photos(user_id):
         top3 = sorted_photos[:3]
         return [f"photo{p['owner_id']}_{p['id']}" for p in top3]
     except Exception as e:
-        print(f"[Ошибка get_top_photos] {e}")
+        logging.error(f"[Ошибка get_top_photos для {user_id}] {e}")
         return []
 
 
@@ -202,6 +214,7 @@ def show_next_candidate(user_id):
 
         if not candidates:
             send_message(user_id, "Кандидаты закончились.", keyboard=main_keyboard())
+            logging.info(f"Кандидаты закончились для пользователя {user_id}")
             return
 
         state["results"] = new_results
@@ -230,15 +243,17 @@ def show_next_candidate(user_id):
         attachments=photos,
         keyboard=main_keyboard(),
     )
+    logging.info(f"Показан кандидат {candidate['id']} пользователю {user_id}")
 
 
 # ---------------- Основной цикл ----------------
-print("Бот запущен")
+logging.info("Старт прослушивания событий VK")
 
 for event in longpoll.listen():
     if event.type == VkBotEventType.MESSAGE_NEW:
         user_id = event.message["from_id"]
         text = event.message.get("text", "").strip().lower()
+        logging.info(f"Сообщение от {user_id}: {text}")
 
         if user_id not in user_states:
             user = get_user(user_id)
@@ -253,6 +268,7 @@ for event in longpoll.listen():
                         age=calculate_age(info.get("bdate")),
                         gender=info.get("sex"),
                     )
+                    logging.info(f"Создан новый пользователь {user_id}")
                 else:
                     send_message(
                         user_id, "Не удалось получить твои данные.", keyboard=start_keyboard()
@@ -271,6 +287,7 @@ for event in longpoll.listen():
 
         # ---------------- Команда /start ----------------
         if text in ["/start", "привет"] and state["step"] == 0:
+            logging.info(f"Пользователь {user_id} начал взаимодействие с ботом")
             send_message(
                 user_id,
                 """Привет! Я помогу найти интересных людей для знакомств 
@@ -288,6 +305,7 @@ for event in longpoll.listen():
 
         # ---------------- Кнопка "Начать" ----------------
         elif text == "начать" and state["step"] == 0:
+            logging.info(f"Пользователь {user_id} запустил поиск кандидатов")
             info = get_user_info(user_id)
             if info:
                 sex = 1 if info["sex"] == 2 else 2
@@ -324,6 +342,7 @@ for event in longpoll.listen():
                 last_id = state["shown_ids"][-1]
                 add_to_favorites(state["user_pk"], last_id)
                 send_message(user_id, "Добавил в избранное", keyboard=main_keyboard())
+                logging.info(f"Пользователь {user_id} добавил кандидата {last_id} в избранное")
             else:
                 send_message(user_id, "Нет кандидата для добавления.", keyboard=main_keyboard())
 
@@ -349,6 +368,7 @@ for event in longpoll.listen():
                 last_vk_id = state["shown_ids"][-1]
                 add_to_blacklist(state["user_pk"], last_vk_id)
                 send_message(user_id, "Добавил в чёрный список", keyboard=main_keyboard())
+                logging.info(f"Пользователь {user_id} добавил кандидата {last_vk_id} в чёрный список")
                 show_next_candidate(user_id)
             else:
                 send_message(user_id, "Нет кандидата для добавления в чёрный список.", keyboard=main_keyboard())
