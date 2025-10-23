@@ -27,6 +27,7 @@ env/
 ENV/
 env.bak/
 venv.bak/
+.venv/
 
 # Environment variables
 .env
@@ -34,6 +35,7 @@ venv.bak/
 .env.development.local
 .env.test.local
 .env.production.local
+.OAuth_2.0_VK_ID/.env
 
 # IDE
 .vscode/
@@ -63,3 +65,4 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+test.py
