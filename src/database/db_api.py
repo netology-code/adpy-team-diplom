@@ -7,8 +7,9 @@ API для интеграции с базой данных VKinder Bot
 import sys
 import os
 from typing import Optional, List, Dict, Any
-from database_interface import DatabaseInterface
-from postgres_manager import PostgreSQLManager
+from .database_interface import DatabaseInterface
+from .postgres_manager import PostgreSQLManager
+from .models import VKUser, Photo, Favorite, Blacklisted, SearchHistory, UserSettings, BotLog, BotMessage
 from loguru import logger
 
 # Добавляем путь к модулям проекта
@@ -141,7 +142,7 @@ def get_user(vk_user_id: int) -> Optional[Dict[str, Any]]:
     try:
         db_interface = get_db_interface()
         with db_interface.get_session() as session:
-            from src.database.models import VKUser
+            from models import VKUser
             user = session.query(VKUser).filter(VKUser.vk_user_id == vk_user_id).first()
             if user:
                 return {
@@ -680,6 +681,498 @@ def ensure_postgresql_ready() -> bool:
 # === ДОПОЛНИТЕЛЬНЫЕ ИМПОРТЫ ===
 import subprocess
 import time
+
+def get_table_list() -> List[str]:
+    """Получить список всех таблиц в базе данных"""
+    try:
+        from sqlalchemy import inspect
+        db = DatabaseInterface()
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        return tables
+    except Exception as e:
+        logger.error(f"Ошибка получения списка таблиц: {e}")
+        return []
+
+def get_table_info(table_name: str) -> Dict[str, Any]:
+    """Получить детальную информацию о таблице"""
+    try:
+        from sqlalchemy import inspect, text
+        from datetime import datetime
+        
+        db = DatabaseInterface()
+        inspector = inspect(db.engine)
+        
+        # Проверяем, существует ли таблица
+        if table_name not in inspector.get_table_names():
+            return None
+        
+        # Получаем количество записей
+        with db.get_session() as session:
+            count_result = session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+            count = count_result.scalar()
+        
+        # Получаем размер таблицы
+        with db.get_session() as session:
+            size_result = session.execute(text(f"""
+                SELECT pg_size_pretty(pg_total_relation_size('{table_name}')) as size
+            """))
+            size = size_result.scalar() or "N/A"
+        
+        # Получаем время последнего обновления (если есть поля updated_at или created_at)
+        last_update = "N/A"
+        try:
+            with db.get_session() as session:
+                # Сначала проверяем, какие поля времени существуют в таблице
+                inspector = inspect(db.engine)
+                columns = inspector.get_columns(table_name)
+                column_names = [col['name'] for col in columns]
+                
+                # Проверяем наличие поля updated_at
+                if 'updated_at' in column_names:
+                    updated_result = session.execute(text(f"""
+                        SELECT MAX(updated_at) FROM {table_name} 
+                        WHERE updated_at IS NOT NULL
+                    """))
+                    updated_time = updated_result.scalar()
+                    
+                    if updated_time:
+                        last_update = updated_time.strftime("%Y-%m-%d %H:%M:%S")
+                elif 'created_at' in column_names:
+                    # Если нет updated_at, проверяем created_at
+                    created_result = session.execute(text(f"""
+                        SELECT MAX(created_at) FROM {table_name} 
+                        WHERE created_at IS NOT NULL
+                    """))
+                    created_time = created_result.scalar()
+                    if created_time:
+                        last_update = created_time.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            # Если нет полей времени или ошибка, оставляем N/A
+            logger.debug(f"Не удалось получить время обновления для таблицы {table_name}: {e}")
+            pass
+        
+        return {
+            'count': count,
+            'size': size,
+            'last_update': last_update
+        }
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения информации о таблице {table_name}: {e}")
+        return None
+
+def get_all_tables_info() -> Dict[str, Dict[str, Any]]:
+    """Получить информацию о всех таблицах за один раз (оптимизированно)"""
+    try:
+        from sqlalchemy import inspect, text
+        from datetime import datetime
+        
+        db = DatabaseInterface()
+        inspector = inspect(db.engine)
+        
+        # Получаем список всех таблиц
+        table_names = inspector.get_table_names()
+        if not table_names:
+            return {}
+        
+        # Собираем информацию о всех таблицах в одном подключении
+        tables_info = {}
+        
+        with db.get_session() as session:
+            # Получаем количество записей для всех таблиц одним запросом
+            for table_name in table_names:
+                try:
+                    # Количество записей
+                    count_result = session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+                    count = count_result.scalar()
+                    
+                    # Размер таблицы
+                    size_result = session.execute(text(f"""
+                        SELECT pg_size_pretty(pg_total_relation_size('{table_name}')) as size
+                    """))
+                    size = size_result.scalar() or "N/A"
+                    
+                    # Время последнего обновления
+                    last_update = "N/A"
+                    try:
+                        # Проверяем поля времени
+                        columns = inspector.get_columns(table_name)
+                        column_names = [col['name'] for col in columns]
+                        
+                        if 'updated_at' in column_names:
+                            updated_result = session.execute(text(f"""
+                                SELECT MAX(updated_at) FROM {table_name} 
+                                WHERE updated_at IS NOT NULL
+                            """))
+                            updated_time = updated_result.scalar()
+                            if updated_time:
+                                last_update = updated_time.strftime("%Y-%m-%d %H:%M:%S")
+                        elif 'created_at' in column_names:
+                            created_result = session.execute(text(f"""
+                                SELECT MAX(created_at) FROM {table_name} 
+                                WHERE created_at IS NOT NULL
+                            """))
+                            created_time = created_result.scalar()
+                            if created_time:
+                                last_update = created_time.strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        pass  # Игнорируем ошибки с полями времени
+                    
+                    tables_info[table_name] = {
+                        'count': count,
+                        'size': size,
+                        'last_update': last_update
+                    }
+                    
+                except Exception as e:
+                    logger.debug(f"Ошибка получения информации о таблице {table_name}: {e}")
+                    tables_info[table_name] = {
+                        'count': 'ERROR',
+                        'size': 'ERROR',
+                        'last_update': 'ERROR'
+                    }
+        
+        return tables_info
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения информации о всех таблицах: {e}")
+        return {}
+
+def get_database_stats() -> Dict[str, Any]:
+    """Получить статистику базы данных"""
+    try:
+        from sqlalchemy import inspect
+        db = DatabaseInterface()
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        stats = {}
+        stats['Таблицы'] = len(tables)
+        
+        # Подсчитываем записи в каждой таблице
+        from sqlalchemy import text
+        with db.get_session() as session:
+            for table in tables:
+                try:
+                    result = session.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                    count = result.scalar()
+                    stats[f"Записей в {table}"] = count
+                except Exception as e:
+                    stats[f"Ошибка в {table}"] = str(e)
+        
+        return stats
+    except Exception as e:
+        logger.error(f"Ошибка получения статистики БД: {e}")
+        return {"Ошибка": str(e)}
+
+def create_all_tables() -> bool:
+    """Создать все таблицы в базе данных"""
+    try:
+        db = DatabaseInterface()
+        success = db.create_database()
+        if success:
+            logger.info("Все таблицы созданы успешно")
+        else:
+            logger.error("Ошибка создания таблиц")
+        return success
+    except Exception as e:
+        logger.error(f"Ошибка создания таблиц: {e}")
+        return False
+
+def clear_all_tables() -> bool:
+    """Очистить все таблицы в базе данных"""
+    logger.info("🔍 Начинаем очистку всех таблиц...")
+    
+    try:
+        logger.info("🔍 Создаем экземпляр DatabaseInterface...")
+        db = DatabaseInterface()
+        logger.info("✅ DatabaseInterface создан успешно")
+        
+        logger.info("🔍 Вызываем db.clear_all_tables()...")
+        success = db.clear_all_tables()
+        logger.info(f"📊 Результат db.clear_all_tables(): {success}")
+        
+        if success:
+            logger.info("✅ Все таблицы очищены успешно")
+        else:
+            logger.error("❌ Ошибка очистки таблиц")
+        return success
+    except Exception as e:
+        logger.error(f"❌ Ошибка очистки таблиц: {e}")
+        logger.error(f"❌ Тип ошибки: {type(e).__name__}")
+        logger.error(f"❌ Детали ошибки: {str(e)}")
+        return False
+
+
+# === УПРАВЛЕНИЕ ЧЕРНЫМ СПИСКОМ ===
+
+def add_to_blacklist(user_id: int, blacklisted_id: int) -> bool:
+    """
+    Добавление пользователя в черный список
+    
+    Args:
+        user_id: ID пользователя, который добавляет в черный список
+        blacklisted_id: ID пользователя, которого добавляют в черный список
+        
+    Returns:
+        bool: True если добавление успешно, False иначе
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return False
+        
+        # Проверяем, есть ли уже в черном списке
+        existing = db.get_blacklisted(user_id)
+        if blacklisted_id in existing:
+            logger.warning(f"⚠️ Пользователь {blacklisted_id} уже в черном списке пользователя {user_id}")
+            return True
+        
+        # Добавляем в черный список
+        success = db.add_to_blacklist(user_id, blacklisted_id)
+        if success:
+            logger.info(f"✅ Пользователь {blacklisted_id} добавлен в черный список пользователя {user_id}")
+        else:
+            logger.error(f"❌ Ошибка добавления пользователя {blacklisted_id} в черный список")
+        return success
+    except Exception as e:
+        logger.error(f"❌ Ошибка добавления в черный список: {e}")
+        return False
+
+
+def get_blacklist(user_id: int) -> list:
+    """
+    Получение черного списка пользователя
+    
+    Args:
+        user_id: ID пользователя
+        
+    Returns:
+        list: Список ID пользователей в черном списке
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return []
+        
+        blacklist = db.get_blacklisted(user_id)
+        logger.info(f"✅ Получен черный список пользователя {user_id}: {len(blacklist)} пользователей")
+        return blacklist
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения черного списка: {e}")
+        return []
+
+
+def remove_from_blacklist(user_id: int, blacklisted_id: int) -> bool:
+    """
+    Удаление пользователя из черного списка
+    
+    Args:
+        user_id: ID пользователя, который удаляет из черного списка
+        blacklisted_id: ID пользователя, которого удаляют из черного списка
+        
+    Returns:
+        bool: True если удаление успешно, False иначе
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return False
+        
+        # Удаляем из черного списка
+        success = db.remove_from_blacklist(user_id, blacklisted_id)
+        if success:
+            logger.info(f"✅ Пользователь {blacklisted_id} удален из черного списка пользователя {user_id}")
+        else:
+            logger.warning(f"⚠️ Пользователь {blacklisted_id} не найден в черном списке пользователя {user_id}")
+        return success
+    except Exception as e:
+        logger.error(f"❌ Ошибка удаления из черного списка: {e}")
+        return False
+
+
+def is_user_blacklisted(user_id: int, target_user_id: int) -> bool:
+    """
+    Проверка, находится ли пользователь в черном списке
+    
+    Args:
+        user_id: ID пользователя, чей черный список проверяется
+        target_user_id: ID пользователя, которого проверяем
+        
+    Returns:
+        bool: True если пользователь в черном списке, False иначе
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return False
+        
+        blacklist = db.get_blacklisted(user_id)
+        is_blacklisted = target_user_id in blacklist
+        logger.debug(f"🔍 Проверка черного списка: пользователь {target_user_id} {'в' if is_blacklisted else 'не в'} черном списке пользователя {user_id}")
+        return is_blacklisted
+    except Exception as e:
+        logger.error(f"❌ Ошибка проверки черного списка: {e}")
+        return False
+
+
+# === СТАТИСТИКА ПОЛЬЗОВАТЕЛЕЙ ===
+
+def get_user_statistics(user_id: int) -> dict:
+    """
+    Получение статистики пользователя из базы данных
+    
+    Args:
+        user_id: ID пользователя VK
+        
+    Returns:
+        dict: Словарь со статистикой пользователя
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return {}
+        
+        # Получаем статистику пользователя
+        stats = db.get_user_statistics(user_id)
+        logger.info(f"✅ Получена статистика пользователя {user_id}: {len(stats)} показателей")
+        return stats
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения статистики пользователя: {e}")
+        return {}
+
+
+def get_user_profile_stats(user_id: int) -> dict:
+    """
+    Получение расширенной статистики профиля пользователя
+    
+    Args:
+        user_id: ID пользователя VK
+        
+    Returns:
+        dict: Словарь с расширенной статистикой профиля
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return {}
+        
+        # Получаем базовую статистику
+        stats = db.get_user_statistics(user_id)
+        
+        # Добавляем дополнительную информацию о профиле
+        with db.get_session() as session:
+            # Количество поисковых запросов
+            searches_count = session.query(SearchHistory).filter(
+                SearchHistory.user_vk_id == user_id
+            ).count()
+            stats['total_searches'] = searches_count
+            
+            # Последний поиск
+            last_search = session.query(SearchHistory).filter(
+                SearchHistory.user_vk_id == user_id
+            ).order_by(SearchHistory.created_at.desc()).first()
+            
+            if last_search:
+                stats['last_search_date'] = last_search.created_at.isoformat()
+                stats['last_search_results'] = last_search.results_count
+            else:
+                stats['last_search_date'] = None
+                stats['last_search_results'] = 0
+            
+            # Настройки пользователя
+            user_settings = session.query(UserSettings).filter(
+                UserSettings.vk_user_id == user_id
+            ).first()
+            
+            if user_settings:
+                stats['user_settings'] = {
+                    'min_age': user_settings.min_age,
+                    'max_age': user_settings.max_age,
+                    'sex_preference': user_settings.sex_preference,
+                    'city_preference': user_settings.city_preference,
+                    'online_only': user_settings.online
+                }
+            else:
+                stats['user_settings'] = None
+        
+        logger.info(f"✅ Получена расширенная статистика профиля пользователя {user_id}")
+        return stats
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения статистики профиля: {e}")
+        return {}
+
+
+def get_user_activity_summary(user_id: int) -> dict:
+    """
+    Получение сводки активности пользователя
+    
+    Args:
+        user_id: ID пользователя VK
+        
+    Returns:
+        dict: Словарь со сводкой активности
+    """
+    try:
+        db = DatabaseInterface()
+        if not db.test_connection():
+            logger.error("❌ База данных недоступна")
+            return {}
+        
+        with db.get_session() as session:
+            # Общая статистика активности
+            activity = {}
+            
+            # Количество сообщений с ботом
+            messages_count = session.query(BotMessage).filter(
+                BotMessage.vk_user_id == user_id
+            ).count()
+            activity['messages_with_bot'] = messages_count
+            
+            # Количество логов пользователя
+            logs_count = session.query(BotLog).filter(
+                BotLog.vk_user_id == user_id
+            ).count()
+            activity['bot_logs_count'] = logs_count
+            
+            # Последняя активность
+            last_message = session.query(BotMessage).filter(
+                BotMessage.vk_user_id == user_id
+            ).order_by(BotMessage.sent_at.desc()).first()
+            
+            if last_message:
+                activity['last_activity'] = last_message.sent_at.isoformat()
+            else:
+                activity['last_activity'] = None
+            
+            # Статистика по дням (последние 7 дней)
+            from datetime import datetime, timedelta
+            week_ago = datetime.now() - timedelta(days=7)
+            
+            recent_searches = session.query(SearchHistory).filter(
+                SearchHistory.user_vk_id == user_id,
+                SearchHistory.created_at >= week_ago
+            ).count()
+            activity['searches_last_week'] = recent_searches
+            
+            recent_messages = session.query(BotMessage).filter(
+                BotMessage.vk_user_id == user_id,
+                BotMessage.sent_at >= week_ago
+            ).count()
+            activity['messages_last_week'] = recent_messages
+        
+        logger.info(f"✅ Получена сводка активности пользователя {user_id}")
+        return activity
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения сводки активности: {e}")
+        return {}
 
 
 if __name__ == "__main__":

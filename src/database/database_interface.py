@@ -16,14 +16,25 @@ from contextlib import contextmanager
 # Добавляем путь к модулям проекта
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from models import (
-    Base, VKUser, Photo, Favorite, Blacklisted, SearchHistory, 
-    UserSettings, BotLog, BotMessage
-)
+# Исправляем импорты для работы как отдельного скрипта
+try:
+    from .models import (
+        Base, VKUser, Photo, Favorite, Blacklisted, SearchHistory, 
+        UserSettings, BotLog, BotMessage
+    )
+except ImportError:
+    # Если относительные импорты не работают, используем абсолютные
+    from models import (
+        Base, VKUser, Photo, Favorite, Blacklisted, SearchHistory, 
+        UserSettings, BotLog, BotMessage
+    )
 import os
 from dotenv import load_dotenv
 from loguru import logger
-from postgres_manager import PostgreSQLManager
+try:
+    from .postgres_manager import PostgreSQLManager
+except ImportError:
+    from postgres_manager import PostgreSQLManager
 
 # Загружаем переменные окружения
 load_dotenv()
@@ -246,17 +257,25 @@ class DatabaseInterface:
                         # Получаем модель таблицы
                         model = self._get_table_model(table_name)
                         if model:
-                            count = session.query(model).count()
-                            info["tables"][table_name] = {
-                                "count": count,
-                                "model": model.__name__
-                            }
+                            try:
+                                count = session.query(model).count()
+                                info["tables"][table_name] = {
+                                    "count": count,
+                                    "model": model.__name__
+                                }
+                            except Exception as count_error:
+                                logger.warning(f"Ошибка подсчета записей в таблице {table_name}: {count_error}")
+                                info["tables"][table_name] = {
+                                    "count": "error",
+                                    "model": model.__name__
+                                }
                         else:
                             info["tables"][table_name] = {
                                 "count": "unknown",
                                 "model": "unknown"
                             }
                     except Exception as e:
+                        logger.error(f"Ошибка обработки таблицы {table_name}: {e}")
                         info["tables"][table_name] = {
                             "count": f"error: {e}",
                             "model": "unknown"
@@ -622,6 +641,7 @@ class DatabaseInterface:
                 favorites = (session.query(Favorite)
                            .filter(Favorite.user_vk_id == user_vk_id)
                            .order_by(Favorite.created_at.desc())
+                           .limit(10)
                            .all())
                 # Преобразуем объекты в словари для избежания проблем с сессией
                 result = []
@@ -675,6 +695,173 @@ class DatabaseInterface:
         except Exception as e:
             logger.error(f"❌ Ошибка удаления из избранного: {e}")
             return False
+
+    # === УПРАВЛЕНИЕ ЧЕРНЫМ СПИСКОМ ===
+
+    def add_to_blacklist(self, user_id: int, blacklisted_id: int) -> bool:
+        """
+        Добавление пользователя в черный список
+        
+        Args:
+            user_id: ID пользователя, который добавляет в черный список
+            blacklisted_id: ID пользователя, которого добавляют в черный список
+            
+        Returns:
+            bool: True если добавление успешно, False иначе
+        """
+        try:
+            with self.get_session() as session:
+                # Проверяем, есть ли уже в черном списке
+                existing = session.query(Blacklisted).filter(
+                    Blacklisted.user_vk_id == user_id,
+                    Blacklisted.blocked_vk_id == blacklisted_id
+                ).first()
+                
+                if existing:
+                    self.logger.warning(f"Пользователь {blacklisted_id} уже в черном списке пользователя {user_id}")
+                    return True
+                
+                # Добавляем в черный список
+                blacklisted = Blacklisted(
+                    user_vk_id=user_id,
+                    blocked_vk_id=blacklisted_id,
+                    created_at=datetime.now()
+                )
+                session.add(blacklisted)
+                session.commit()
+                
+                self.logger.info(f"Пользователь {blacklisted_id} добавлен в черный список пользователя {user_id}")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Ошибка добавления в черный список: {e}")
+            return False
+
+    def get_blacklisted(self, user_id: int) -> List[int]:
+        """
+        Получение списка ID пользователей в черном списке
+        
+        Args:
+            user_id: ID пользователя
+            
+        Returns:
+            List[int]: Список ID пользователей в черном списке
+        """
+        try:
+            with self.get_session() as session:
+                blacklisted = session.query(Blacklisted).filter(
+                    Blacklisted.user_vk_id == user_id
+                ).all()
+                
+                return [b.blocked_vk_id for b in blacklisted]
+                
+        except Exception as e:
+            self.logger.error(f"Ошибка получения черного списка: {e}")
+            return []
+
+    def remove_from_blacklist(self, user_id: int, blacklisted_id: int) -> bool:
+        """
+        Удаление пользователя из черного списка
+        
+        Args:
+            user_id: ID пользователя, который удаляет из черного списка
+            blacklisted_id: ID пользователя, которого удаляют из черного списка
+            
+        Returns:
+            bool: True если удаление успешно, False иначе
+        """
+        try:
+            with self.get_session() as session:
+                blacklisted = session.query(Blacklisted).filter(
+                    Blacklisted.user_vk_id == user_id,
+                    Blacklisted.blocked_vk_id == blacklisted_id
+                ).first()
+                
+                if not blacklisted:
+                    self.logger.warning(f"Пользователь {blacklisted_id} не найден в черном списке пользователя {user_id}")
+                    return False
+                
+                session.delete(blacklisted)
+                session.commit()
+                
+                self.logger.info(f"Пользователь {blacklisted_id} удален из черного списка пользователя {user_id}")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Ошибка удаления из черного списка: {e}")
+            return False
+
+    def get_user_statistics(self, user_id: int) -> dict:
+        """
+        Получение статистики пользователя из базы данных
+        
+        Args:
+            user_id: ID пользователя VK
+            
+        Returns:
+            dict: Словарь со статистикой пользователя
+        """
+        try:
+            stats = {}
+            
+            with self.get_session() as session:
+                # Количество просмотренных анкет (уникальные пользователи в vk_users, найденные этим пользователем)
+                try:
+                    # Считаем количество уникальных пользователей, которых нашел этот пользователь
+                    # через фотографии, которые он нашел
+                    viewed_count = session.query(Photo).filter(
+                        Photo.found_by_user_id == user_id
+                    ).with_entities(Photo.vk_user_id).distinct().count()
+                    stats['viewed_profiles'] = viewed_count
+                except Exception as e:
+                    logger.error(f"❌ Ошибка получения количества просмотренных анкет: {e}")
+                    stats['viewed_profiles'] = 0
+                
+                # Получаем количество избранных и заблокированных
+                try:
+                    favorites_count = session.query(Favorite).filter(
+                        Favorite.user_vk_id == user_id
+                    ).count()
+                    stats['favorites_count'] = favorites_count
+                except Exception as e:
+                    logger.error(f"❌ Ошибка получения количества избранных: {e}")
+                    stats['favorites_count'] = 0
+                
+                try:
+                    blacklisted_count = session.query(Blacklisted).filter(
+                        Blacklisted.user_vk_id == user_id
+                    ).count()
+                    stats['blacklisted_count'] = blacklisted_count
+                except Exception as e:
+                    logger.error(f"❌ Ошибка получения количества заблокированных: {e}")
+                    stats['blacklisted_count'] = 0
+                
+                # Количество просмотренных фотографий
+                try:
+                    viewed_photos = session.query(Photo).filter(
+                        Photo.found_by_user_id == user_id
+                    ).count()
+                    stats['viewed_photos'] = viewed_photos
+                except Exception as e:
+                    logger.error(f"❌ Ошибка получения количества просмотренных фото: {e}")
+                    stats['viewed_photos'] = 0
+                
+                # Количество поисковых сессий
+                try:
+                    search_sessions = session.query(SearchHistory).filter(
+                        SearchHistory.user_vk_id == user_id
+                    ).count()
+                    stats['search_sessions'] = search_sessions
+                except Exception as e:
+                    logger.error(f"❌ Ошибка получения количества поисков: {e}")
+                    stats['search_sessions'] = 0
+            
+            logger.info(f"✅ Статистика пользователя {user_id} получена: {len(stats)} показателей")
+            return stats
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статистики пользователя: {e}")
+            return {}
 
 
 def main():

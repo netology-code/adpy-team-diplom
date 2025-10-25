@@ -7,8 +7,16 @@ CLI интерфейс для управления базой данных VKind
 import sys
 import argparse
 from typing import List, Optional
-from database_interface import DatabaseInterface
-from postgres_manager import PostgreSQLManager
+
+# Исправляем импорты для работы как отдельного скрипта
+try:
+    from .database_interface import DatabaseInterface
+    from .postgres_manager import PostgreSQLManager
+except ImportError:
+    # Если относительные импорты не работают, используем абсолютные
+    from database_interface import DatabaseInterface
+    from postgres_manager import PostgreSQLManager
+
 from loguru import logger
 
 
