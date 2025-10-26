@@ -46,7 +46,7 @@ class VKUser(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Связи с другими таблицами
-    photos = relationship("Photo", back_populates="user", cascade="all, delete-orphan")
+    photos = relationship("Photo", foreign_keys="Photo.vk_user_id", back_populates="user", cascade="all, delete-orphan")
     favorites = relationship("Favorite", foreign_keys="Favorite.user_vk_id", back_populates="user")
     blacklisted_by = relationship("Blacklisted", foreign_keys="Blacklisted.user_vk_id", back_populates="user")
     search_history = relationship("SearchHistory", back_populates="user")
@@ -70,7 +70,8 @@ class Photo(Base):
     Хранит информацию о фотографиях пользователей:
     - Ссылка на фотографию
     - Тип фотографии (profile, album, etc.)
-    - Количество лайков
+    - Количество лайков и дизлайков
+    - Кто нашел эту фотографию в поиске
     """
     __tablename__ = "photos"
     
@@ -81,11 +82,16 @@ class Photo(Base):
     photo_type = Column(String(50), nullable=True)  # profile, album, etc.
     likes_count = Column(Integer, default=0, nullable=False)
     
+    # Поле для отслеживания того, кто нашел эту фотографию
+    found_by_user_id = Column(Integer, ForeignKey("vk_users.vk_user_id"), nullable=True)
+    
     # Временные метки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Связи
-    user = relationship("VKUser", back_populates="photos")
+    user = relationship("VKUser", foreign_keys=[vk_user_id], back_populates="photos")
+    found_by_user = relationship("VKUser", foreign_keys=[found_by_user_id])
     
     def __repr__(self) -> str:
         """Строковое представление фотографии"""
@@ -151,7 +157,7 @@ class SearchHistory(Base):
     Модель истории поиска
     
     Хранит информацию о поисковых запросах:
-    - Параметры поиска (возраст, пол, город)
+    - Параметры поиска (возраст, пол, город, статусы)
     - Количество найденных результатов
     - Время поиска
     """
@@ -160,8 +166,18 @@ class SearchHistory(Base):
     # Основные поля
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_vk_id = Column(Integer, ForeignKey("vk_users.vk_user_id"), nullable=False)
-    search_params = Column(JSON, nullable=False)  # Параметры поиска в JSON
     results_count = Column(Integer, default=0, nullable=False)
+    
+    # Отдельные поля для параметров поиска
+    target_sex = Column(String(20), nullable=True)  # Мужской/Женский
+    age_from = Column(Integer, nullable=True)  # Минимальный возраст
+    age_to = Column(Integer, nullable=True)  # Максимальный возраст
+    city = Column(String(100), nullable=True)  # Город поиска
+    city_id = Column(Integer, nullable=True)  # ID города
+    
+    # Поля для статусов
+    relationship_status = Column(String(50), nullable=True)  # single, married, divorced, etc.
+    online = Column(Boolean, nullable=True)  # Только онлайн
     
     # Временные метки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -182,6 +198,7 @@ class UserSettings(Base):
     - Возрастной диапазон
     - Предпочтения по полу
     - Предпочтения по городу
+    - Статусы отношений
     """
     __tablename__ = "user_settings"
     
@@ -192,6 +209,10 @@ class UserSettings(Base):
     max_age = Column(Integer, default=35, nullable=False)
     sex_preference = Column(Integer, nullable=True)  # 1 - женский, 2 - мужской, 0 - любой
     city_preference = Column(String(100), nullable=True)
+    
+    # Новые поля для статусов
+    relationship_status = Column(String(50), nullable=True)  # single, married, divorced, etc.
+    online = Column(Boolean, default=False, nullable=True)  # Только онлайн
     
     # Временные метки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
