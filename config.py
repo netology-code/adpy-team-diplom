@@ -10,4 +10,10 @@ class AuthSettings(Base):
     AUTH_URL: str
     AUTH_TOKEN: str
 
+
+class BotSettings(Base):
+    BOT_TOKEN: str
+
+
+bot_settings = BotSettings()
 auth_settings = AuthSettings()
