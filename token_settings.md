@@ -1,23 +1,21 @@
 # Как создать себе ACCESS_TOKEN
 
-1. Вы должны быть авторизованы в VK
-2. Открываем ссылку https://dev.vk.com/ru
+1. Вы должны быть авторизованы в VK<br>
+2. Открываем ссылку https://dev.vk.com/ru<br>
 3. Далее переходим в меню "Приложения".
-4. Нажимаем на кнопку "Создать приложение"
+4. Нажимаем на кнопку "Создать приложение"<br>
 <img width="1280" height="738" alt="image" src="https://github.com/user-attachments/assets/48bf7a0c-9af7-480f-8139-72f55548574c" />
-5. Придумываем название и нажимаем "Создать"
+5. Придумываем название и нажимаем "Создать"<br>
 <img width="1244" height="768" alt="image" src="https://github.com/user-attachments/assets/5bdae13e-c19b-4ec7-865a-47570be3ae84" />
-6. Слева переходим в меню "Размещение"
-
+6. Слева переходим в меню "Размещение"<br>
 
 7. Указываем ссылку https://oauth.vk.com/blank.html в блоке "Десктопная версия сайта" и "Режим разработки" после этого нажимаем "Сохранить".
 <img width="1029" height="659" alt="image" src="https://github.com/user-attachments/assets/ed043081-fddc-4f5f-bb0e-24df8fc01c8f" />
-8. В блоке справа запоминаем ID приложения  
+8. В блоке справа запоминаем ID приложения<br>
 
 <img width="349" height="166" alt="image" src="https://github.com/user-attachments/assets/fb15aaf5-89ac-402c-ac2f-2acf32dd422c" />  
-  
-
-10. Меняем {client_id} на ID приложения(п.8) в ссылке
+<br>
+10. Меняем {client_id} на ID приложения(п.8) в ссылке<br>
 https://oauth.vk.com/authorize?client_id={client_id}&display=page&scope=friends,photos&response_type=token&v=5.199&state=123456&redirect_uri=https://oauth.vk.com/blank.html
 
 11. Вставляем ссылку в браузер и нажимаем Enter
