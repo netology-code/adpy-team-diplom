@@ -9,6 +9,7 @@
 <img width="1244" height="768" alt="image" src="https://github.com/user-attachments/assets/5bdae13e-c19b-4ec7-865a-47570be3ae84" />
 6. Слева переходим в меню "Размещение"
 
+
 7. Указываем ссылку https://oauth.vk.com/blank.html в блоке "Десктопная версия сайта" и "Режим разработки" после этого нажимаем "Сохранить".
 <img width="1029" height="659" alt="image" src="https://github.com/user-attachments/assets/ed043081-fddc-4f5f-bb0e-24df8fc01c8f" />
 8. В блоке справа запоминаем ID приложения
