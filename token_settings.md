@@ -14,12 +14,15 @@
 <img width="1029" height="659" alt="image" src="https://github.com/user-attachments/assets/ed043081-fddc-4f5f-bb0e-24df8fc01c8f" />
 8. В блоке справа запоминаем ID приложения
 <img width="349" height="166" alt="image" src="https://github.com/user-attachments/assets/fb15aaf5-89ac-402c-ac2f-2acf32dd422c" />
-9. В ссылке https://oauth.vk.com/authorize?client_id={client_id}&display=page&scope=friends,photos&response_type=token&v=5.199&state=123456&redirect_uri=https://oauth.vk.com/blank.html
-    - меняем {client_id} на ID приложения из пункта 8
-12. Вставляем ссылку в браузер и нажимаем Enter
-13. Нажимаем "Разрешить"
-14. В браузерной строке появится новая ссылка https://oauth.vk.com/blank.html#access_token={TOKEN}&expires_in=86400&user_id=171691064&state=123456, где {TOKEN} - Ваш токен.
-15. Чтобы проверить его работоспособность нужно взять код ниже и запустить его с Вашим токеном и id 
+
+
+9. Меняем {client_id} на ID приложения(п.8) в ссылке
+https://oauth.vk.com/authorize?client_id={client_id}&display=page&scope=friends,photos&response_type=token&v=5.199&state=123456&redirect_uri=https://oauth.vk.com/blank.html
+
+10. Вставляем ссылку в браузер и нажимаем Enter
+11. Нажимаем "Разрешить"
+12. В браузерной строке появится новая ссылка https://oauth.vk.com/blank.html#access_token={TOKEN}&expires_in=86400&user_id=171691064&state=123456, где {TOKEN} - Ваш токен.
+13. Чтобы проверить его работоспособность нужно взять код ниже и запустить его с Вашим токеном и id 
 ```python
 import requests
 
